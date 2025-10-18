@@ -13,6 +13,7 @@ const AdminDashboard = () => import("../pages/AdminDashboard");
 const ArticlesPage = () => import("../pages/ArticlesPage");
 const ArticleDetail = () => import("../pages/ArticleDetail");
 const AccommodationsPage = () => import("../pages/AccommodationsPage");
+const AccommodationDetail = () => import("../pages/AccommodationDetail");
 const EventsPage = () => import("../pages/EventsPage");
 const EventDetail = () => import("../pages/EventDetail");
 const PlacesPage = () => import("../pages/PlacesPage");
@@ -61,6 +62,13 @@ export const router = createBrowserRouter([
         path: "accommodations",
         async lazy() {
           const mod = await AccommodationsPage();
+          return { Component: mod.default };
+        },
+      },
+      {
+        path: "accommodations/:id",
+        async lazy() {
+          const mod = await AccommodationDetail();
           return { Component: mod.default };
         },
       },

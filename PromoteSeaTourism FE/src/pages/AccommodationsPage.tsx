@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { accommodationService } from "../services/accommodationService";
-import { Accommodation } from "../types/accommodation";
+import { categoryService } from "../services/categoryService";
+import type { Accommodation } from "../types/accommodation";
+import type { Category } from "../types/category";
 import LoadingSpinner from "../components/LoadingSpinner";
 import Pagination from "../components/Pagination";
-import ImageCarousel from "../components/ImageCarousel";
 
 const AccommodationsPage: React.FC = () => {
   const [allAccommodations, setAllAccommodations] = useState<Accommodation[]>(
@@ -16,15 +17,16 @@ const AccommodationsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
   const [priceRange, setPriceRange] = useState<string>("all");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [categories, setCategories] = useState<Category[]>([]);
 
   const pageSize = 9;
 
   useEffect(() => {
     loadAccommodations();
+    loadCategories();
   }, []);
 
   useEffect(() => {
@@ -47,6 +49,34 @@ const AccommodationsPage: React.FC = () => {
     }
   };
 
+  const loadCategories = async () => {
+    try {
+      const response = await categoryService.getCategories({
+        page: 1,
+        pageSize: 100,
+      });
+      setCategories(response.data);
+    } catch (error) {
+      console.error("Error loading categories:", error);
+    }
+  };
+
+  const getCategoryName = (categoryId: number): string => {
+    const category = categories.find((cat) => cat.id === categoryId);
+    return category?.name || "Khác";
+  };
+
+  const getAvailableCategories = (): Category[] => {
+    // Get unique category IDs from accommodations
+    const usedCategoryIds = [
+      ...new Set(allAccommodations.map((acc) => acc.categoryId)),
+    ];
+    // Filter categories to only include those that have accommodations
+    return categories.filter((category) =>
+      usedCategoryIds.includes(category.id)
+    );
+  };
+
   const filterAccommodations = () => {
     let filtered = allAccommodations;
 
@@ -62,7 +92,7 @@ const AccommodationsPage: React.FC = () => {
     // Filter by price range
     if (priceRange !== "all") {
       filtered = filtered.filter((accommodation) => {
-        const price = accommodation.priceFrom || 0;
+        const price = accommodation.minPrice || 0;
         switch (priceRange) {
           case "budget":
             return price < 500000;
@@ -88,7 +118,6 @@ const AccommodationsPage: React.FC = () => {
 
     setFilteredAccommodations(filtered);
     setTotalPages(Math.ceil(filtered.length / pageSize));
-    setTotalItems(filtered.length);
     setCurrentPage(1);
   };
 
@@ -98,33 +127,14 @@ const AccommodationsPage: React.FC = () => {
     filterAccommodations();
   };
 
-  const formatPrice = (price: number) => {
+  const formatPrice = (price: number | undefined | null) => {
+    if (!price || isNaN(price)) {
+      return "Liên hệ";
+    }
     return new Intl.NumberFormat("vi-VN", {
       style: "currency",
       currency: "VND",
     }).format(price);
-  };
-
-  const getPriceRange = (price: number) => {
-    if (price < 500000) return "budget";
-    if (price < 1000000) return "mid";
-    if (price < 2000000) return "high";
-    return "luxury";
-  };
-
-  const getPriceRangeLabel = (range: string) => {
-    switch (range) {
-      case "budget":
-        return "Dưới 500k";
-      case "mid":
-        return "500k - 1M";
-      case "high":
-        return "1M - 2M";
-      case "luxury":
-        return "Trên 2M";
-      default:
-        return "Tất cả";
-    }
   };
 
   const renderStars = (rating: number) => {
@@ -204,36 +214,19 @@ const AccommodationsPage: React.FC = () => {
             >
               Tất cả
             </button>
-            <button
-              onClick={() => setSelectedCategory("1")}
-              className={`px-6 py-3 rounded-full transition-colors ${
-                selectedCategory === "1"
-                  ? "bg-ocean-600 text-white"
-                  : "bg-white text-gray-700 hover:bg-ocean-50"
-              }`}
-            >
-              Khách sạn
-            </button>
-            <button
-              onClick={() => setSelectedCategory("2")}
-              className={`px-6 py-3 rounded-full transition-colors ${
-                selectedCategory === "2"
-                  ? "bg-ocean-600 text-white"
-                  : "bg-white text-gray-700 hover:bg-ocean-50"
-              }`}
-            >
-              Resort
-            </button>
-            <button
-              onClick={() => setSelectedCategory("3")}
-              className={`px-6 py-3 rounded-full transition-colors ${
-                selectedCategory === "3"
-                  ? "bg-ocean-600 text-white"
-                  : "bg-white text-gray-700 hover:bg-ocean-50"
-              }`}
-            >
-              Homestay
-            </button>
+            {getAvailableCategories().map((category) => (
+              <button
+                key={category.id}
+                onClick={() => setSelectedCategory(category.id.toString())}
+                className={`px-6 py-3 rounded-full transition-colors ${
+                  selectedCategory === category.id.toString()
+                    ? "bg-ocean-600 text-white"
+                    : "bg-white text-gray-700 hover:bg-ocean-50"
+                }`}
+              >
+                {category.name}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -260,10 +253,11 @@ const AccommodationsPage: React.FC = () => {
                 >
                   {/* Accommodation Images */}
                   <div className="relative h-64 overflow-hidden">
-                    {accommodation.images && accommodation.images.length > 0 ? (
-                      <ImageCarousel
-                        images={accommodation.images}
-                        className="w-full h-full"
+                    {accommodation.thumbnailUrl ? (
+                      <img
+                        src={accommodation.thumbnailUrl}
+                        alt={accommodation.name}
+                        className="w-full h-full object-cover"
                       />
                     ) : (
                       <img
@@ -278,15 +272,15 @@ const AccommodationsPage: React.FC = () => {
 
                     {/* Price Badge */}
                     <div className="absolute top-4 right-4">
-                      <div className="bg-white/90 text-gray-800 px-3 py-2 rounded-lg font-bold">
-                        {formatPrice(accommodation.priceFrom)}
+                      <div className="bg-white/90 text-red-600 px-3 py-2 rounded-lg font-bold">
+                        {formatPrice(accommodation.minPrice)}
                       </div>
                     </div>
 
                     {/* Category Badge */}
                     <div className="absolute top-4 left-4">
                       <span className="px-3 py-1 bg-white/90 text-gray-800 text-sm font-medium rounded-full">
-                        {accommodation.category?.name || "Khác"}
+                        {getCategoryName(accommodation.categoryId)}
                       </span>
                     </div>
                   </div>
@@ -351,6 +345,8 @@ const AccommodationsPage: React.FC = () => {
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
+              total={filteredAccommodations.length}
+              pageSize={pageSize}
               onPageChange={setCurrentPage}
             />
           </div>
