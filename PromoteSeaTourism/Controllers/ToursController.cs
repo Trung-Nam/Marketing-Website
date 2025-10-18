@@ -16,10 +16,14 @@ namespace PromoteSeaTourism.Controllers
         // ===== LIST (public): thumbnailUrl từ ảnh cover (nếu có) hoặc ảnh đầu =====
         [HttpGet("tours/list"), AllowAnonymous]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<ActionResult<object>> List(int page = 1, int pageSize = 20)
+        public async Task<ActionResult<object>> List(int page = 1, int pageSize = 20, bool? published = null)
         {
-            var q = _db.Tours.AsNoTracking()
-                             .OrderByDescending(x => x.CreatedAt);
+            var q = _db.Tours.AsNoTracking();
+            
+            if (published.HasValue) 
+                q = q.Where(x => x.IsPublished == published.Value);
+            
+            q = q.OrderByDescending(x => x.CreatedAt);
 
             var total = await q.CountAsync();
             var pageItems = await Page(q, page, pageSize)
@@ -33,7 +37,9 @@ namespace PromoteSeaTourism.Controllers
                     t.PriceFrom,
                     t.Itinerary,
                     t.CategoryId,
-                    t.CreatedAt
+                    t.IsPublished,
+                    t.CreatedAt,
+                    t.UpdatedAt
                 })
                 .ToListAsync();
 
@@ -68,7 +74,9 @@ namespace PromoteSeaTourism.Controllers
                 t.PriceFrom,
                 t.Itinerary,
                 t.CategoryId,
+                t.IsPublished,
                 t.CreatedAt,
+                t.UpdatedAt,
                 ThumbnailUrl = firstLinkUrlByTour.TryGetValue(t.Id, out var fb) ? fb : null
             });
 
@@ -113,7 +121,9 @@ namespace PromoteSeaTourism.Controllers
                 t.PriceFrom,
                 t.Itinerary,
                 t.CategoryId,
+                t.IsPublished,
                 t.CreatedAt,
+                t.UpdatedAt,
                 Images = gallery
             };
 
@@ -138,6 +148,7 @@ namespace PromoteSeaTourism.Controllers
                     PriceFrom = dto.PriceFrom,
                     Itinerary = dto.Itinerary,
                     CategoryId = dto.CategoryId,
+                    IsPublished = dto.IsPublished,
                     CreatedAt = DateTime.UtcNow
                 };
                 _db.Tours.Add(e);
@@ -246,6 +257,8 @@ namespace PromoteSeaTourism.Controllers
                 e.PriceFrom = dto.PriceFrom;
                 e.Itinerary = dto.Itinerary;
                 e.CategoryId = dto.CategoryId;
+                e.IsPublished = dto.IsPublished;
+                e.UpdatedAt = DateTime.UtcNow;
                 await _db.SaveChangesAsync();
 
                 // (1) Add new images

@@ -1,6 +1,5 @@
 import api from "../utils/axiosInstance";
 import type {
-  Restaurant,
   RestaurantDetail,
   RestaurantListResponse,
   RestaurantListParams,

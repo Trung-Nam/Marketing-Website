@@ -90,7 +90,9 @@ namespace PromoteSeaTourism.Models
         public decimal? PriceFrom { get; set; }
         public string? Itinerary { get; set; }   // TEXT NULL
         public long CategoryId { get; set; }
+        public bool IsPublished { get; set; } = true;
         public DateTime CreatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
         public Category Category { get; set; } = null!;
     }
 

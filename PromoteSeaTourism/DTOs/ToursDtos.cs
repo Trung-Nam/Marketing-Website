@@ -9,6 +9,7 @@ namespace PromoteSeaTourism.DTOs
         decimal? PriceFrom,
         string? Itinerary,
         long CategoryId,
+        bool IsPublished,
         // Media
         NewImageItem[]? Images,     // ảnh mới tạo cùng tour
         long[]? AttachMediaIds,     // gắn các media đã có sẵn
@@ -24,6 +25,7 @@ namespace PromoteSeaTourism.DTOs
         decimal? PriceFrom,
         string? Itinerary,
         long CategoryId,
+        bool IsPublished,
         // Media ops
         NewImageItem[]?   AddImages,       // thêm ảnh mới
         long[]?           AttachMediaIds,  // gắn media có sẵn

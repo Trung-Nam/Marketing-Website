@@ -115,7 +115,7 @@ using (var scope = app.Services.CreateScope())
     const string adminEmail = "admin@example.com";
     if (!db.Users.Any(u => u.Email == adminEmail))
     {
-        var (hash, salt) = hasher.Hash("Admin@123");
+        var (hash, salt) = hasher.Hash("123456");
         db.Users.Add(new User
         {
             Email = adminEmail,
@@ -131,7 +131,7 @@ using (var scope = app.Services.CreateScope())
     const string userEmail = "user@example.com";
     if (!db.Users.Any(u => u.Email == userEmail))
     {
-        var (hash, salt) = hasher.Hash("User@123");
+        var (hash, salt) = hasher.Hash("123456");
         db.Users.Add(new User
         {
             Email = userEmail,
@@ -139,6 +139,23 @@ using (var scope = app.Services.CreateScope())
             PasswordSalt = salt,
             Name = "Default User",
             Role = UserRole.User,
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow
+        });
+    }
+
+    // Thêm Editor user
+    const string editorEmail = "editor@example.com";
+    if (!db.Users.Any(u => u.Email == editorEmail))
+    {
+        var (hash, salt) = hasher.Hash("123456");
+        db.Users.Add(new User
+        {
+            Email = editorEmail,
+            PasswordHash = hash,
+            PasswordSalt = salt,
+            Name = "Content Editor",
+            Role = UserRole.Editor,
             IsActive = true,
             CreatedAt = DateTime.UtcNow
         });
@@ -290,6 +307,9 @@ using (var scope = app.Services.CreateScope())
         ("Bãi biển Ba Động",  "bai-bien-ba-dong",  "Bãi biển hoang sơ, cát mịn.",     "Trà Vinh",  "beaches",         sampleImageUrls[0]),
         ("Đồi cát vàng",      "doi-cat-vang",      "Điểm check-in hoàng hôn đẹp.",     "Phan Thiết","view-check-in",   sampleImageUrls[1]),
         ("Bảo tàng Biển",     "bao-tang-bien",     "Trưng bày văn hóa ngư dân.",       "Nha Trang", "museums",         sampleImageUrls[2]),
+        ("Chợ đêm Hội An",    "cho-dem-hoi-an",    "Chợ đêm sầm uất với đèn lồng.",    "Hội An",   "markets",         sampleImageUrls[3]),
+        ("Làng gốm Thanh Hà", "lang-gom-thanh-ha", "Làng nghề gốm truyền thống.",       "Hội An",   "craft-villages",  sampleImageUrls[4]),
+        ("Công viên Quốc gia", "cong-vien-quoc-gia", "Khu bảo tồn thiên nhiên.",        "Cát Tiên", "parks-nature",    sampleImageUrls[5]),
     };
 
     // Remove old sample places with same slugs for a clean re-seed
@@ -331,6 +351,8 @@ using (var scope = app.Services.CreateScope())
     {
         ("Hải sản Nắng Gió", "hai-san-nang-gio", "Hải sản tươi, view biển.", "Số 12 Đường Ven Biển", "200k–500k", "seafood", sampleImageUrls[3]),
         ("Cà phê Sóng",      "ca-phe-song",      "Cafe ven biển, chill.",    "Quảng trường Biển",     "35k–80k",  "cafes",   sampleImageUrls[4]),
+        ("Nhà hàng Biển Xanh", "nha-hang-bien-xanh", "Đặc sản biển địa phương.", "Khu du lịch Biển Xanh", "150k–300k", "local-food", sampleImageUrls[0]),
+        ("Quán Cà phê Gió",  "quan-ca-phe-gio",  "Cà phê view biển đẹp.",    "Bãi biển Mũi Né",       "25k–60k",  "cafes",   sampleImageUrls[1]),
     };
 
     var restSlugs = restaurantsSeed.Select(r => r.Slug).ToArray();
@@ -366,6 +388,8 @@ using (var scope = app.Services.CreateScope())
     {
         ("Blue Sea Resort", "blue-sea-resort", "Resort ven biển, hồ bơi vô cực.", "Khu du lịch Biển Xanh", 4, 1200000, 3800000, "hotels",    sampleImageUrls[5]),
         ("An Nhiên Homestay", "an-nhien-homestay", "Homestay gần biển, decor mộc.", "Hẻm 5 Đường Biển",     null, 450000,  950000,  "homestays", sampleImageUrls[1]),
+        ("Sunset Hotel", "sunset-hotel", "Khách sạn 3 sao view biển.", "Đường Bãi Trước", 3, 800000, 1500000, "hotels", sampleImageUrls[2]),
+        ("Beach House", "beach-house", "Nhà nghỉ gần biển, giá rẻ.", "Bãi biển Mũi Né", null, 300000, 600000, "homestays", sampleImageUrls[3]),
     };
 
     var accSlugs = accSeed.Select(a => a.Slug).ToArray();
@@ -406,6 +430,8 @@ using (var scope = app.Services.CreateScope())
     {
         ("Lễ hội Biển 2025", "le-hoi-bien-2025", "Âm nhạc & ẩm thực biển.", baiBien.Address, DateTime.UtcNow.AddDays(20), DateTime.UtcNow.AddDays(22), "festivals", sampleImageUrls[2]),
         ("Giải chạy ven biển", "giai-chay-ven-bien", "Giải chạy 10km, 21km.", baiBien.Address, DateTime.UtcNow.AddDays(35), DateTime.UtcNow.AddDays(35).AddHours(6), "sports", sampleImageUrls[0]),
+        ("Hội chợ ẩm thực", "hoi-cho-am-thuc", "Hội chợ ẩm thực địa phương.", "Quảng trường Trung tâm", DateTime.UtcNow.AddDays(45), DateTime.UtcNow.AddDays(47), "fairs", sampleImageUrls[1]),
+        ("Concert Biển", "concert-bien", "Buổi hòa nhạc ngoài trời.", "Sân khấu ven biển", DateTime.UtcNow.AddDays(60), DateTime.UtcNow.AddDays(60).AddHours(3), "music", sampleImageUrls[4]),
     };
 
     var eventSlugs = eventsSeed.Select(e => e.Slug).ToArray();
@@ -438,15 +464,23 @@ using (var scope = app.Services.CreateScope())
     db.SaveChanges();
 
     // ---------- TOURS ----------
-    var toursSeed = new (string Name, string Slug, string? Summary, string Description, decimal? PriceFrom, string? Itinerary, string CatSlug)[]
+    var toursSeed = new (string Name, string Slug, string? Summary, string Description, decimal? PriceFrom, string? Itinerary, string CatSlug, bool IsPublished)[]
     {
         ("Tour Ba Động 1 ngày", "tour-ba-dong-1-ngay", "Khởi hành sáng – về chiều.", 
             "Tham quan bãi biển Ba Động, check-in, thưởng thức hải sản.", 650000,
-            "07:30 đón khách • 09:30 tắm biển • 12:00 ăn trưa • 15:00 quay về.", "day-trips"),
+            "07:30 đón khách • 09:30 tắm biển • 12:00 ăn trưa • 15:00 quay về.", "day-trips", true),
 
         ("Tour 2N1Đ Biển & Làng chài", "tour-2n1d-bien-lang-chai", "Lịch trình nhẹ nhàng, phù hợp gia đình.",
             "Ngày 1: Biển – làng chài – cafe hoàng hôn. Ngày 2: Chợ hải sản – bảo tàng biển.", 1850000,
-            "Ngày 1: 08:00 xuất phát • 10:00 biển • 16:30 cafe; Ngày 2: 07:00 chợ hải sản • 09:30 bảo tàng.", "two-three-days"),
+            "Ngày 1: 08:00 xuất phát • 10:00 biển • 16:30 cafe; Ngày 2: 07:00 chợ hải sản • 09:30 bảo tàng.", "two-three-days", true),
+
+        ("Tour Phiêu lưu Mũi Né", "tour-phieu-luu-mui-ne", "Trải nghiệm hoang dã tại Mũi Né.",
+            "Leo đồi cát, lướt ván, tham quan làng chài truyền thống.", 1200000,
+            "06:00 khởi hành • 08:00 leo đồi cát • 10:00 lướt ván • 14:00 tham quan làng chài.", "adventure", true),
+
+        ("Tour Gia đình Nha Trang", "tour-gia-dinh-nha-trang", "Tour phù hợp cho cả gia đình.",
+            "Tham quan Vinpearl, thủy cung, bãi biển Nha Trang.", 2200000,
+            "08:00 khởi hành • 10:00 Vinpearl • 14:00 thủy cung • 16:00 bãi biển.", "family", false),
     };
 
     var tourSlugs = toursSeed.Select(t => t.Slug).ToArray();
@@ -467,6 +501,7 @@ using (var scope = app.Services.CreateScope())
             PriceFrom = t.PriceFrom,
             Itinerary = t.Itinerary,
             CategoryId = CatId(t.CatSlug),
+            IsPublished = t.IsPublished,
             CreatedAt = DateTime.UtcNow
         });
     db.SaveChanges();
@@ -555,6 +590,16 @@ using (var scope = app.Services.CreateScope())
             "Cách chọn hải sản tươi ngon tại chợ địa phương.",
             "Đi chợ sớm, hỏi giá trước, ưu tiên quầy thân quen...",
             "tips", sampleImageUrls[3], true, DateTime.UtcNow.AddDays(-3)),
+
+        ("Tin tức du lịch mới", "tin-tuc-du-lich-moi",
+            "Cập nhật tin tức du lịch biển mới nhất.",
+            "Thông tin về các điểm đến mới, chính sách du lịch...",
+            "news", sampleImageUrls[1], true, DateTime.UtcNow.AddDays(-1)),
+
+        ("Hướng dẫn chụp ảnh biển", "huong-dan-chup-anh-bien",
+            "Kỹ thuật chụp ảnh đẹp tại bãi biển.",
+            "Góc chụp, thời điểm vàng, setup ánh sáng...",
+            "tips", sampleImageUrls[4], false, null),
     };
 
     foreach (var a in articlesSeed)

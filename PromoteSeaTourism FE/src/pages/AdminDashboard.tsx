@@ -6,12 +6,14 @@ import { accommodationService } from "../services/accommodationService";
 import { eventService } from "../services/eventService";
 import { placeService } from "../services/placeService";
 import { restaurantService } from "../services/restaurantService";
+import { tourService } from "../services/tourService";
 import type { Category } from "../types/category";
 import type { Article } from "../types/article";
 import type { Accommodation } from "../types/accommodation";
 import type { Event } from "../types/event";
 import type { Place } from "../types/place";
 import type { Restaurant } from "../types/restaurant";
+import type { Tour } from "../types/tour";
 import LoadingSpinner from "../components/LoadingSpinner";
 import CategoryModal from "../components/CategoryModal";
 import EditCategoryModal from "../components/EditCategoryModal";
@@ -30,6 +32,9 @@ import EditPlaceModal from "../components/EditPlaceModal";
 import ViewRestaurantModal from "../components/ViewRestaurantModal";
 import CreateRestaurantModal from "../components/CreateRestaurantModal";
 import EditRestaurantModal from "../components/EditRestaurantModal";
+import ViewTourModal from "../components/ViewTourModal";
+import CreateTourModal from "../components/CreateTourModal";
+import EditTourModal from "../components/EditTourModal";
 
 type TabKey =
   | "articles"
@@ -125,6 +130,17 @@ export default function AdminDashboard() {
   const [restaurantCategories, setRestaurantCategories] = useState<Category[]>(
     []
   );
+
+  // Tours state
+  const [tours, setTours] = useState<Tour[]>([]);
+  const [toursPage, setToursPage] = useState(1);
+  const [toursTotal, setToursTotal] = useState(0);
+  const [viewingTour, setViewingTour] = useState<Tour | null>(null);
+  const [showViewTourModal, setShowViewTourModal] = useState(false);
+  const [showCreateTourModal, setShowCreateTourModal] = useState(false);
+  const [editingTour, setEditingTour] = useState<Tour | null>(null);
+  const [showEditTourModal, setShowEditTourModal] = useState(false);
+  const [tourCategories, setTourCategories] = useState<Category[]>([]);
 
   const [loading, setLoading] = useState(false);
   const pageSize = 20;
@@ -323,6 +339,32 @@ export default function AdminDashboard() {
     }
   }, [restaurantsPage, pageSize]);
 
+  const loadTours = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await tourService.getTours(toursPage, pageSize);
+      setTours(response.data);
+      setToursTotal(response.total);
+    } catch (error) {
+      console.error("Error loading tours:", error);
+      toast.error("Không thể tải danh sách tours!");
+    } finally {
+      setLoading(false);
+    }
+  }, [toursPage, pageSize]);
+
+  const loadTourCategories = useCallback(async () => {
+    try {
+      const response = await categoryService.getCategories({
+        page: 1,
+        pageSize: 100,
+      });
+      setTourCategories(response.data);
+    } catch (error) {
+      console.error("Error loading tour categories:", error);
+    }
+  }, []);
+
   const loadPlaceCategories = useCallback(async () => {
     try {
       const response = await categoryService.getCategories({
@@ -484,6 +526,14 @@ export default function AdminDashboard() {
     loadRestaurants();
   };
 
+  const handleCreateTourSuccess = () => {
+    loadTours();
+  };
+
+  const handleEditTourSuccess = () => {
+    loadTours();
+  };
+
   const handleDeleteRestaurant = async (restaurant: Restaurant) => {
     // Show confirmation toast
     const confirmToast = toast(
@@ -523,6 +573,47 @@ export default function AdminDashboard() {
       loadRestaurants();
     } catch (error) {
       console.error("Error deleting restaurant:", error);
+      // Error message is already shown by axios interceptor
+    }
+  };
+
+  const handleDeleteTour = async (tour: Tour) => {
+    // Show confirmation toast
+    const confirmToast = toast(
+      <div className="flex flex-col gap-2">
+        <p className="font-medium">Bạn có chắc muốn xóa tour "{tour.name}"?</p>
+        <div className="flex gap-2 justify-end">
+          <button
+            onClick={() => {
+              toast.dismiss(confirmToast);
+              performDeleteTour(tour);
+            }}
+            className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700 transition-colors"
+          >
+            Xóa
+          </button>
+          <button
+            onClick={() => toast.dismiss(confirmToast)}
+            className="px-3 py-1 bg-gray-500 text-white rounded text-sm hover:bg-gray-600 transition-colors"
+          >
+            Hủy
+          </button>
+        </div>
+      </div>,
+      {
+        autoClose: false, // Don't auto-dismiss
+        closeOnClick: false,
+      }
+    );
+  };
+
+  const performDeleteTour = async (tour: Tour) => {
+    try {
+      await tourService.deleteTour(tour.id);
+      toast.success("Xóa tour thành công!");
+      loadTours();
+    } catch (error) {
+      console.error("Error deleting tour:", error);
       // Error message is already shown by axios interceptor
     }
   };
@@ -667,6 +758,9 @@ export default function AdminDashboard() {
     } else if (active === "restaurants") {
       loadRestaurants();
       loadRestaurantCategories();
+    } else if (active === "tours") {
+      loadTours();
+      loadTourCategories();
     }
   }, [
     active,
@@ -676,14 +770,17 @@ export default function AdminDashboard() {
     eventsPage,
     placesPage,
     restaurantsPage,
+    toursPage,
     loadCategories,
     loadArticles,
     loadAccommodations,
     loadEvents,
     loadPlaces,
     loadRestaurants,
+    loadTours,
     loadPlaceCategories,
     loadRestaurantCategories,
+    loadTourCategories,
   ]);
 
   return (
@@ -2060,7 +2157,247 @@ export default function AdminDashboard() {
             )}
             {active === "tours" && (
               <Section title="Tours">
-                <Placeholder />
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <p className="text-gray-600">
+                      Quản lý danh sách tours. Tổng cộng: {toursTotal} tours
+                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={loadTours}
+                        className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                      >
+                        Refresh
+                      </button>
+                      <button
+                        onClick={() => setShowCreateTourModal(true)}
+                        className="px-4 py-2 bg-gradient-to-r from-ocean-600 to-turquoise-600 text-white rounded-lg hover:from-ocean-700 hover:to-turquoise-700 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl"
+                      >
+                        Tạo Tour
+                      </button>
+                    </div>
+                  </div>
+
+                  {loading ? (
+                    <LoadingSpinner />
+                  ) : (
+                    <div className="bg-white rounded-lg shadow overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                ID
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Image
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Name
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Summary
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Price From
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Created At
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Actions
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {tours.length === 0 && (
+                              <tr>
+                                <td
+                                  colSpan={7}
+                                  className="px-6 py-4 text-center text-gray-500"
+                                >
+                                  {loading
+                                    ? "Đang tải..."
+                                    : "Không có tours nào"}
+                                </td>
+                              </tr>
+                            )}
+                            {tours.map((tour) => (
+                              <tr key={tour.id} className="hover:bg-gray-50">
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                  {tour.id}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center">
+                                    {tour.thumbnailUrl ? (
+                                      <img
+                                        src={tour.thumbnailUrl}
+                                        alt={tour.name}
+                                        className="w-full h-full object-cover"
+                                      />
+                                    ) : (
+                                      <div className="w-8 h-8 bg-gray-300 rounded flex items-center justify-center">
+                                        <svg
+                                          className="w-4 h-4 text-gray-500"
+                                          fill="none"
+                                          stroke="currentColor"
+                                          viewBox="0 0 24 24"
+                                        >
+                                          <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                          />
+                                        </svg>
+                                      </div>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <div className="text-sm font-medium text-gray-900">
+                                    {tour.name}
+                                  </div>
+                                  <div className="text-sm text-gray-500">
+                                    {tour.slug}
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <div className="text-sm text-gray-900 max-w-xs truncate">
+                                    {tour.summary}
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                  {tour.priceFrom.toLocaleString()} VNĐ
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                  {new Date(
+                                    tour.createdAt
+                                  ).toLocaleDateString()}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                  <div className="flex gap-2">
+                                    <button
+                                      onClick={() => {
+                                        setViewingTour(tour);
+                                        setShowViewTourModal(true);
+                                      }}
+                                      className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+                                    >
+                                      <svg
+                                        className="w-3 h-3 mr-1"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                      >
+                                        <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          strokeWidth={2}
+                                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                        />
+                                        <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          strokeWidth={2}
+                                          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                                        />
+                                      </svg>
+                                      View
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        setEditingTour(tour);
+                                        setShowEditTourModal(true);
+                                      }}
+                                      className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                                    >
+                                      <svg
+                                        className="w-3 h-3 mr-1"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                      >
+                                        <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          strokeWidth={2}
+                                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                        />
+                                      </svg>
+                                      Edit
+                                    </button>
+                                    <button
+                                      onClick={() => handleDeleteTour(tour)}
+                                      className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
+                                    >
+                                      <svg
+                                        className="w-3 h-3 mr-1"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                      >
+                                        <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          strokeWidth={2}
+                                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                        />
+                                      </svg>
+                                      Delete
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* Pagination */}
+                      {toursTotal > pageSize && (
+                        <div className="flex items-center justify-between">
+                          <div className="text-sm text-gray-700">
+                            Showing {(toursPage - 1) * pageSize + 1} to{" "}
+                            {Math.min(toursPage * pageSize, toursTotal)} of{" "}
+                            {toursTotal} results
+                          </div>
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() =>
+                                setToursPage((prev) => Math.max(1, prev - 1))
+                              }
+                              disabled={toursPage === 1}
+                              className="px-3 py-1 text-sm border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                            >
+                              Previous
+                            </button>
+                            <span className="px-3 py-1 text-sm text-gray-700">
+                              Page {toursPage} of{" "}
+                              {Math.ceil(toursTotal / pageSize)}
+                            </span>
+                            <button
+                              onClick={() =>
+                                setToursPage((prev) =>
+                                  Math.min(
+                                    Math.ceil(toursTotal / pageSize),
+                                    prev + 1
+                                  )
+                                )
+                              }
+                              disabled={
+                                toursPage >= Math.ceil(toursTotal / pageSize)
+                              }
+                              className="px-3 py-1 text-sm border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                            >
+                              Next
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </Section>
             )}
           </div>
@@ -2186,6 +2523,26 @@ export default function AdminDashboard() {
         onSuccess={handleEditRestaurantSuccess}
         restaurant={editingRestaurant}
       />
+
+      <ViewTourModal
+        isOpen={showViewTourModal}
+        onClose={() => setShowViewTourModal(false)}
+        tour={viewingTour}
+      />
+
+      <CreateTourModal
+        isOpen={showCreateTourModal}
+        onClose={() => setShowCreateTourModal(false)}
+        onSuccess={handleCreateTourSuccess}
+      />
+
+      <EditTourModal
+        isOpen={showEditTourModal}
+        onClose={() => setShowEditTourModal(false)}
+        onSuccess={handleEditTourSuccess}
+        tour={editingTour}
+        categories={tourCategories}
+      />
     </div>
   );
 }
@@ -2201,14 +2558,6 @@ function Section({
     <div>
       <h2 className="text-xl font-semibold text-gray-900 mb-4">{title}</h2>
       {children}
-    </div>
-  );
-}
-
-function Placeholder() {
-  return (
-    <div className="rounded-xl border border-dashed border-gray-300 p-6 text-gray-600">
-      Khu vực quản trị sẽ được kết nối API và bảng dữ liệu sau.
     </div>
   );
 }
