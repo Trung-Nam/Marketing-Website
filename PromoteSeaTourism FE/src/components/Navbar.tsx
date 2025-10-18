@@ -18,22 +18,22 @@ export default function Navbar() {
           <Link to="/" className="hover:text-primary-600">
             Trang chủ
           </Link>
-          <Link to="/promote/articles" className="hover:text-primary-600">
+          <Link to="/articles" className="hover:text-primary-600">
             Bài viết
           </Link>
-          <Link to="/promote/accommodations" className="hover:text-primary-600">
-            Nơi nghỉ
+          <Link to="/accommodations" className="hover:text-primary-600">
+            Nơi nghỉ dưỡng
           </Link>
-          <Link to="/promote/events" className="hover:text-primary-600">
+          <Link to="/events" className="hover:text-primary-600">
             Sự kiện
           </Link>
-          <Link to="/promote/places" className="hover:text-primary-600">
+          <Link to="/places" className="hover:text-primary-600">
             Địa điểm
           </Link>
-          <Link to="/promote/restaurants" className="hover:text-primary-600">
+          <Link to="/restaurants" className="hover:text-primary-600">
             Nhà hàng
           </Link>
-          <Link to="/promote/tours" className="hover:text-primary-600">
+          <Link to="/tours" className="hover:text-primary-600">
             Tour
           </Link>
           {isAuthenticated ? (

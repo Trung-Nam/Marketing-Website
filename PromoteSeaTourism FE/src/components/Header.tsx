@@ -43,6 +43,11 @@ export default function Header() {
         location.pathname === path || location.pathname.startsWith("/articles/")
       );
     }
+    if (path === "/places") {
+      return (
+        location.pathname === path || location.pathname.startsWith("/places/")
+      );
+    }
     return location.pathname === path;
   };
 

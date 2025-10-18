@@ -7,15 +7,15 @@ import ErrorBoundary from "../components/ErrorBoundary";
 const Home = () => import("../pages/Home");
 const Register = () => import("../pages/Register");
 const Profile = () => import("../pages/Profile");
-const Articles = () => import("../pages/Articles");
-const ArticleDetail = () => import("../pages/ArticleDetail");
 const AdminDashboard = () => import("../pages/AdminDashboard");
 
 // Promotion Pages
 const ArticlesPage = () => import("../pages/ArticlesPage");
+const ArticleDetail = () => import("../pages/ArticleDetail");
 const AccommodationsPage = () => import("../pages/AccommodationsPage");
 const EventsPage = () => import("../pages/EventsPage");
 const PlacesPage = () => import("../pages/PlacesPage");
+const PlaceDetail = () => import("../pages/PlaceDetail");
 const RestaurantsPage = () => import("../pages/RestaurantsPage");
 const ToursPage = () => import("../pages/ToursPage");
 
@@ -74,6 +74,13 @@ export const router = createBrowserRouter([
         path: "places",
         async lazy() {
           const mod = await PlacesPage();
+          return { Component: mod.default };
+        },
+      },
+      {
+        path: "places/:id",
+        async lazy() {
+          const mod = await PlaceDetail();
           return { Component: mod.default };
         },
       },

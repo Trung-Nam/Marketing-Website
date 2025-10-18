@@ -1,38 +1,43 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { placeService } from "../services/placeService";
-import { Place } from "../types/place";
+import { categoryService } from "../services/categoryService";
+import type { Place } from "../types/place";
+import type { Category } from "../types/category";
 import LoadingSpinner from "../components/LoadingSpinner";
 import Pagination from "../components/Pagination";
 
 const PlacesPage: React.FC = () => {
-  const [places, setPlaces] = useState<Place[]>([]);
+  const [allPlaces, setAllPlaces] = useState<Place[]>([]);
+  const [filteredPlaces, setFilteredPlaces] = useState<Place[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [categories, setCategories] = useState<Category[]>([]);
   const [viewMode, setViewMode] = useState<"grid" | "map">("grid");
 
   const pageSize = 9;
 
   useEffect(() => {
     loadPlaces();
-  }, [currentPage, searchTerm, selectedCategory]);
+    loadCategories();
+  }, []);
+
+  useEffect(() => {
+    filterPlaces();
+  }, [allPlaces, searchTerm, selectedCategory]);
 
   const loadPlaces = async () => {
     try {
       setLoading(true);
       const response = await placeService.getPlaces({
-        page: currentPage,
-        pageSize,
-        search: searchTerm || undefined,
-        categoryId:
-          selectedCategory !== "all" ? parseInt(selectedCategory) : undefined,
+        page: 1,
+        pageSize: 1000, // Load all places
       });
 
-      setPlaces(response.data);
-      setTotalPages(Math.ceil(response.total / pageSize));
+      setAllPlaces(response.data);
     } catch (error) {
       console.error("Error loading places:", error);
     } finally {
@@ -40,10 +45,66 @@ const PlacesPage: React.FC = () => {
     }
   };
 
+  const loadCategories = async () => {
+    try {
+      const response = await categoryService.getCategories({
+        page: 1,
+        pageSize: 100,
+      });
+      setCategories(response.data);
+    } catch (error) {
+      console.error("Error loading categories:", error);
+    }
+  };
+
+  const getCategoryName = (categoryId: number): string => {
+    const category = categories.find((cat) => cat.id === categoryId);
+    return category?.name || "Khác";
+  };
+
+  const getAvailableCategories = (): Category[] => {
+    // Get unique category IDs from places
+    const usedCategoryIds = [
+      ...new Set(allPlaces.map((place) => place.categoryId)),
+    ];
+
+    // Return only categories that have places
+    return categories.filter((category) =>
+      usedCategoryIds.includes(category.id)
+    );
+  };
+
+  const filterPlaces = () => {
+    let filtered = allPlaces;
+
+    // Filter by search term
+    if (searchTerm) {
+      filtered = filtered.filter(
+        (place) =>
+          place.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          place.address.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Filter by category
+    if (selectedCategory !== "all") {
+      filtered = filtered.filter(
+        (place) => place.categoryId === parseInt(selectedCategory)
+      );
+    }
+
+    setFilteredPlaces(filtered);
+    setTotalPages(Math.ceil(filtered.length / pageSize));
+    setCurrentPage(1);
+  };
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    setCurrentPage(1);
-    loadPlaces();
+    filterPlaces();
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
   };
 
   const renderStars = (rating: number) => {
@@ -59,25 +120,6 @@ const PlacesPage: React.FC = () => {
         <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
       </svg>
     ));
-  };
-
-  const getDistance = (
-    lat1: number,
-    lon1: number,
-    lat2: number,
-    lon2: number
-  ) => {
-    const R = 6371; // Radius of the Earth in kilometers
-    const dLat = ((lat2 - lat1) * Math.PI) / 180;
-    const dLon = ((lon2 - lon1) * Math.PI) / 180;
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos((lat1 * Math.PI) / 180) *
-        Math.cos((lat2 * Math.PI) / 180) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c;
   };
 
   return (
@@ -132,46 +174,19 @@ const PlacesPage: React.FC = () => {
             >
               Tất cả
             </button>
-            <button
-              onClick={() => setSelectedCategory("1")}
-              className={`px-6 py-3 rounded-full transition-colors ${
-                selectedCategory === "1"
-                  ? "bg-ocean-600 text-white"
-                  : "bg-white text-gray-700 hover:bg-ocean-50"
-              }`}
-            >
-              Bãi biển
-            </button>
-            <button
-              onClick={() => setSelectedCategory("2")}
-              className={`px-6 py-3 rounded-full transition-colors ${
-                selectedCategory === "2"
-                  ? "bg-ocean-600 text-white"
-                  : "bg-white text-gray-700 hover:bg-ocean-50"
-              }`}
-            >
-              Đảo
-            </button>
-            <button
-              onClick={() => setSelectedCategory("3")}
-              className={`px-6 py-3 rounded-full transition-colors ${
-                selectedCategory === "3"
-                  ? "bg-ocean-600 text-white"
-                  : "bg-white text-gray-700 hover:bg-ocean-50"
-              }`}
-            >
-              Vịnh
-            </button>
-            <button
-              onClick={() => setSelectedCategory("4")}
-              className={`px-6 py-3 rounded-full transition-colors ${
-                selectedCategory === "4"
-                  ? "bg-ocean-600 text-white"
-                  : "bg-white text-gray-700 hover:bg-ocean-50"
-              }`}
-            >
-              Công viên
-            </button>
+            {getAvailableCategories().map((category) => (
+              <button
+                key={category.id}
+                onClick={() => setSelectedCategory(category.id.toString())}
+                className={`px-6 py-3 rounded-full transition-colors ${
+                  selectedCategory === category.id.toString()
+                    ? "bg-ocean-600 text-white"
+                    : "bg-white text-gray-700 hover:bg-ocean-50"
+                }`}
+              >
+                {category.name}
+              </button>
+            ))}
           </div>
 
           {/* View Mode Toggle */}
@@ -204,7 +219,7 @@ const PlacesPage: React.FC = () => {
           <div className="flex justify-center py-12">
             <LoadingSpinner />
           </div>
-        ) : places.length === 0 ? (
+        ) : filteredPlaces.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-gray-500 text-lg">
               Không tìm thấy địa điểm nào
@@ -213,94 +228,96 @@ const PlacesPage: React.FC = () => {
         ) : viewMode === "grid" ? (
           /* Grid View */
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {places.map((place) => (
-              <Link
-                key={place.id}
-                to={`/places/${place.id}`}
-                className="group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden transform hover:-translate-y-2"
-              >
-                {/* Place Image */}
-                <div className="relative h-64 overflow-hidden">
-                  <img
-                    src={place.thumbnailUrl || "/default-avatar.svg"}
-                    alt={place.name}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+            {filteredPlaces
+              .slice((currentPage - 1) * pageSize, currentPage * pageSize)
+              .map((place) => (
+                <Link
+                  key={place.id}
+                  to={`/places/${place.id}`}
+                  className="group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden transform hover:-translate-y-2"
+                >
+                  {/* Place Image */}
+                  <div className="relative h-64 overflow-hidden">
+                    <img
+                      src={place.thumbnailUrl || "/default-avatar.svg"}
+                      alt={place.name}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
 
-                  {/* Category Badge */}
-                  <div className="absolute top-4 left-4">
-                    <span className="px-3 py-1 bg-white/90 text-gray-800 text-sm font-medium rounded-full">
-                      {place.category?.name || "Khác"}
-                    </span>
+                    {/* Category Badge */}
+                    <div className="absolute top-4 left-4">
+                      <span className="px-3 py-1 bg-white/90 text-gray-800 text-sm font-medium rounded-full">
+                        {getCategoryName(place.categoryId)}
+                      </span>
+                    </div>
+
+                    {/* Rating Badge */}
+                    <div className="absolute top-4 right-4">
+                      <div className="bg-white/90 text-gray-800 px-3 py-2 rounded-lg font-bold flex items-center gap-1">
+                        <svg
+                          className="w-4 h-4 text-yellow-400"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <span>4.5</span>
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Rating Badge */}
-                  <div className="absolute top-4 right-4">
-                    <div className="bg-white/90 text-gray-800 px-3 py-2 rounded-lg font-bold flex items-center gap-1">
+                  {/* Place Content */}
+                  <div className="p-6">
+                    <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-ocean-600 transition-colors">
+                      {place.name}
+                    </h3>
+
+                    <p className="text-gray-600 mb-4 line-clamp-2">
+                      {place.summary}
+                    </p>
+
+                    {/* Rating */}
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="flex">
+                        {renderStars(4)} {/* Assuming 4-star rating */}
+                      </div>
+                      <span className="text-sm text-gray-500">
+                        4.5 (128 đánh giá)
+                      </span>
+                    </div>
+
+                    {/* Location */}
+                    <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
                       <svg
-                        className="w-4 h-4 text-yellow-400"
+                        className="w-4 h-4"
                         fill="currentColor"
                         viewBox="0 0 20 20"
                       >
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        <path
+                          fillRule="evenodd"
+                          d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
+                          clipRule="evenodd"
+                        />
                       </svg>
-                      <span>4.5</span>
+                      <span>{place.address}</span>
+                    </div>
+
+                    {/* Features */}
+                    <div className="flex flex-wrap gap-2">
+                      <span className="px-2 py-1 bg-ocean-50 text-ocean-600 text-xs rounded-full">
+                        Miễn phí
+                      </span>
+                      <span className="px-2 py-1 bg-ocean-50 text-ocean-600 text-xs rounded-full">
+                        Chụp ảnh
+                      </span>
+                      <span className="px-2 py-1 bg-ocean-50 text-ocean-600 text-xs rounded-full">
+                        Gia đình
+                      </span>
                     </div>
                   </div>
-                </div>
-
-                {/* Place Content */}
-                <div className="p-6">
-                  <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-ocean-600 transition-colors">
-                    {place.name}
-                  </h3>
-
-                  <p className="text-gray-600 mb-4 line-clamp-2">
-                    {place.summary}
-                  </p>
-
-                  {/* Rating */}
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="flex">
-                      {renderStars(4)} {/* Assuming 4-star rating */}
-                    </div>
-                    <span className="text-sm text-gray-500">
-                      4.5 (128 đánh giá)
-                    </span>
-                  </div>
-
-                  {/* Location */}
-                  <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
-                    <svg
-                      className="w-4 h-4"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                    <span>{place.address}</span>
-                  </div>
-
-                  {/* Features */}
-                  <div className="flex flex-wrap gap-2">
-                    <span className="px-2 py-1 bg-ocean-50 text-ocean-600 text-xs rounded-full">
-                      Miễn phí
-                    </span>
-                    <span className="px-2 py-1 bg-ocean-50 text-ocean-600 text-xs rounded-full">
-                      Chụp ảnh
-                    </span>
-                    <span className="px-2 py-1 bg-ocean-50 text-ocean-600 text-xs rounded-full">
-                      Gia đình
-                    </span>
-                  </div>
-                </div>
-              </Link>
-            ))}
+                </Link>
+              ))}
           </div>
         ) : (
           /* Map View Placeholder */
@@ -321,7 +338,9 @@ const PlacesPage: React.FC = () => {
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
-              onPageChange={setCurrentPage}
+              total={filteredPlaces.length}
+              pageSize={pageSize}
+              onPageChange={handlePageChange}
             />
           </div>
         )}
