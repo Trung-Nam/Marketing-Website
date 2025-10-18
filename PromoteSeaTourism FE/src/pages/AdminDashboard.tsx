@@ -5,11 +5,13 @@ import { articleService } from "../services/articleService";
 import { accommodationService } from "../services/accommodationService";
 import { eventService } from "../services/eventService";
 import { placeService } from "../services/placeService";
+import { restaurantService } from "../services/restaurantService";
 import type { Category } from "../types/category";
 import type { Article } from "../types/article";
 import type { Accommodation } from "../types/accommodation";
 import type { Event } from "../types/event";
 import type { Place } from "../types/place";
+import type { Restaurant } from "../types/restaurant";
 import LoadingSpinner from "../components/LoadingSpinner";
 import CategoryModal from "../components/CategoryModal";
 import EditCategoryModal from "../components/EditCategoryModal";
@@ -25,6 +27,9 @@ import EditEventModal from "../components/EditEventModal";
 import ViewPlaceModal from "../components/ViewPlaceModal";
 import CreatePlaceModal from "../components/CreatePlaceModal";
 import EditPlaceModal from "../components/EditPlaceModal";
+import ViewRestaurantModal from "../components/ViewRestaurantModal";
+import CreateRestaurantModal from "../components/CreateRestaurantModal";
+import EditRestaurantModal from "../components/EditRestaurantModal";
 
 type TabKey =
   | "articles"
@@ -103,6 +108,24 @@ export default function AdminDashboard() {
   const [showEditPlaceModal, setShowEditPlaceModal] = useState(false);
   const [placeCategories, setPlaceCategories] = useState<Category[]>([]);
 
+  // Restaurants state
+  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
+  const [restaurantsPage, setRestaurantsPage] = useState(1);
+  const [restaurantsTotal, setRestaurantsTotal] = useState(0);
+  const [viewingRestaurant, setViewingRestaurant] = useState<Restaurant | null>(
+    null
+  );
+  const [showViewRestaurantModal, setShowViewRestaurantModal] = useState(false);
+  const [showCreateRestaurantModal, setShowCreateRestaurantModal] =
+    useState(false);
+  const [editingRestaurant, setEditingRestaurant] = useState<Restaurant | null>(
+    null
+  );
+  const [showEditRestaurantModal, setShowEditRestaurantModal] = useState(false);
+  const [restaurantCategories, setRestaurantCategories] = useState<Category[]>(
+    []
+  );
+
   const [loading, setLoading] = useState(false);
   const pageSize = 20;
 
@@ -122,6 +145,16 @@ export default function AdminDashboard() {
       setLoading(false);
     }
   }, [categoriesPage, pageSize]);
+
+  const getRestaurantCategoryName = useCallback(
+    (categoryId: number) => {
+      const category = restaurantCategories.find(
+        (cat) => cat.id === categoryId
+      );
+      return category ? category.name : `Category ${categoryId}`;
+    },
+    [restaurantCategories]
+  );
 
   const loadArticles = useCallback(async () => {
     setLoading(true);
@@ -273,6 +306,23 @@ export default function AdminDashboard() {
     }
   }, [placesPage, pageSize]);
 
+  const loadRestaurants = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await restaurantService.getRestaurants({
+        page: restaurantsPage,
+        pageSize,
+      });
+      setRestaurants(response.data);
+      setRestaurantsTotal(response.total);
+    } catch (error) {
+      console.error("Error loading restaurants:", error);
+      toast.error("Không thể tải danh sách restaurants!");
+    } finally {
+      setLoading(false);
+    }
+  }, [restaurantsPage, pageSize]);
+
   const loadPlaceCategories = useCallback(async () => {
     try {
       const response = await categoryService.getCategories({
@@ -282,6 +332,18 @@ export default function AdminDashboard() {
       setPlaceCategories(response.data);
     } catch (error) {
       console.error("Error loading place categories:", error);
+    }
+  }, []);
+
+  const loadRestaurantCategories = useCallback(async () => {
+    try {
+      const response = await categoryService.getCategories({
+        page: 1,
+        pageSize: 100,
+      });
+      setRestaurantCategories(response.data);
+    } catch (error) {
+      console.error("Error loading restaurant categories:", error);
     }
   }, []);
 
@@ -412,6 +474,57 @@ export default function AdminDashboard() {
 
   const handleCreateEventSuccess = () => {
     loadEvents();
+  };
+
+  const handleCreateRestaurantSuccess = () => {
+    loadRestaurants();
+  };
+
+  const handleEditRestaurantSuccess = () => {
+    loadRestaurants();
+  };
+
+  const handleDeleteRestaurant = async (restaurant: Restaurant) => {
+    // Show confirmation toast
+    const confirmToast = toast(
+      <div className="flex flex-col gap-2">
+        <p className="font-medium">
+          Bạn có chắc muốn xóa restaurant "{restaurant.name}"?
+        </p>
+        <div className="flex gap-2 justify-end">
+          <button
+            onClick={() => {
+              toast.dismiss(confirmToast);
+              performDeleteRestaurant(restaurant);
+            }}
+            className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700 transition-colors"
+          >
+            Xóa
+          </button>
+          <button
+            onClick={() => toast.dismiss(confirmToast)}
+            className="px-3 py-1 bg-gray-500 text-white rounded text-sm hover:bg-gray-600 transition-colors"
+          >
+            Hủy
+          </button>
+        </div>
+      </div>,
+      {
+        autoClose: false, // Don't auto-dismiss
+        closeOnClick: false,
+      }
+    );
+  };
+
+  const performDeleteRestaurant = async (restaurant: Restaurant) => {
+    try {
+      await restaurantService.deleteRestaurant(restaurant.id);
+      toast.success("Xóa restaurant thành công!");
+      loadRestaurants();
+    } catch (error) {
+      console.error("Error deleting restaurant:", error);
+      // Error message is already shown by axios interceptor
+    }
   };
 
   const handleEditEvent = (event: Event) => {
@@ -551,6 +664,9 @@ export default function AdminDashboard() {
     } else if (active === "places") {
       loadPlaces();
       loadPlaceCategories();
+    } else if (active === "restaurants") {
+      loadRestaurants();
+      loadRestaurantCategories();
     }
   }, [
     active,
@@ -559,12 +675,15 @@ export default function AdminDashboard() {
     accommodationsPage,
     eventsPage,
     placesPage,
+    restaurantsPage,
     loadCategories,
     loadArticles,
     loadAccommodations,
     loadEvents,
     loadPlaces,
+    loadRestaurants,
     loadPlaceCategories,
+    loadRestaurantCategories,
   ]);
 
   return (
@@ -1691,7 +1810,252 @@ export default function AdminDashboard() {
             )}
             {active === "restaurants" && (
               <Section title="Restaurants">
-                <Placeholder />
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <p className="text-gray-600">
+                      Quản lý danh sách restaurants. Tổng cộng:{" "}
+                      {restaurantsTotal} restaurants
+                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={loadRestaurants}
+                        className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                      >
+                        Refresh
+                      </button>
+                      <button
+                        onClick={() => setShowCreateRestaurantModal(true)}
+                        className="px-4 py-2 bg-gradient-to-r from-ocean-600 to-turquoise-600 text-white rounded-lg hover:from-ocean-700 hover:to-turquoise-700 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl"
+                      >
+                        Tạo Restaurant
+                      </button>
+                    </div>
+                  </div>
+
+                  {loading ? (
+                    <LoadingSpinner />
+                  ) : (
+                    <div className="bg-white rounded-lg shadow overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                ID
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Name
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Address
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Price Range
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Category
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Status
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Actions
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {restaurants.map((restaurant) => (
+                              <tr
+                                key={restaurant.id}
+                                className="hover:bg-gray-50"
+                              >
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                  {restaurant.id}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <div className="flex items-center">
+                                    <div className="flex-shrink-0 h-10 w-10">
+                                      <img
+                                        className="h-10 w-10 rounded-full object-cover"
+                                        src={restaurant.thumbnailUrl}
+                                        alt={restaurant.name}
+                                        loading="lazy"
+                                        onError={(e) => {
+                                          (e.target as HTMLImageElement).src =
+                                            "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 24 24'%3E%3Cpath fill='%23ccc' d='M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z'/%3E%3C/svg%3E";
+                                        }}
+                                      />
+                                    </div>
+                                    <div className="ml-4">
+                                      <div className="text-sm font-medium text-gray-900">
+                                        {restaurant.name}
+                                      </div>
+                                      <div className="text-sm text-gray-500">
+                                        {restaurant.slug}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                  {restaurant.address}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                  {restaurant.priceRangeText}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                  {getRestaurantCategoryName(
+                                    restaurant.categoryId
+                                  )}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <span
+                                    className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                      restaurant.isPublished
+                                        ? "bg-green-100 text-green-800"
+                                        : "bg-red-100 text-red-800"
+                                    }`}
+                                  >
+                                    {restaurant.isPublished
+                                      ? "Published"
+                                      : "Draft"}
+                                  </span>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                  <div className="flex gap-2">
+                                    <button
+                                      onClick={() => {
+                                        setViewingRestaurant(restaurant);
+                                        setShowViewRestaurantModal(true);
+                                      }}
+                                      className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+                                    >
+                                      <svg
+                                        className="w-3 h-3 mr-1"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                      >
+                                        <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          strokeWidth={2}
+                                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                        />
+                                        <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          strokeWidth={2}
+                                          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                                        />
+                                      </svg>
+                                      View
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        setEditingRestaurant(restaurant);
+                                        setShowEditRestaurantModal(true);
+                                      }}
+                                      className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-ocean-600 hover:bg-ocean-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ocean-500 transition-colors"
+                                    >
+                                      <svg
+                                        className="w-3 h-3 mr-1"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                      >
+                                        <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          strokeWidth={2}
+                                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                        />
+                                      </svg>
+                                      Edit
+                                    </button>
+                                    <button
+                                      onClick={() =>
+                                        handleDeleteRestaurant(restaurant)
+                                      }
+                                      className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
+                                    >
+                                      <svg
+                                        className="w-3 h-3 mr-1"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                      >
+                                        <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          strokeWidth={2}
+                                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                        />
+                                      </svg>
+                                      Delete
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                      {restaurants.length === 0 && (
+                        <div className="text-center py-12">
+                          <div className="text-gray-500 text-lg">
+                            Không có restaurants nào
+                          </div>
+                          <div className="text-gray-400 text-sm mt-2">
+                            Hãy tạo restaurant đầu tiên của bạn
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Pagination */}
+                  {restaurantsTotal > pageSize && (
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm text-gray-700">
+                        Showing {(restaurantsPage - 1) * pageSize + 1} to{" "}
+                        {Math.min(restaurantsPage * pageSize, restaurantsTotal)}{" "}
+                        of {restaurantsTotal} results
+                      </div>
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() =>
+                            setRestaurantsPage((prev) => Math.max(1, prev - 1))
+                          }
+                          disabled={restaurantsPage === 1}
+                          className="px-3 py-1 text-sm border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                        >
+                          Previous
+                        </button>
+                        <span className="px-3 py-1 text-sm text-gray-700">
+                          Page {restaurantsPage} of{" "}
+                          {Math.ceil(restaurantsTotal / pageSize)}
+                        </span>
+                        <button
+                          onClick={() =>
+                            setRestaurantsPage((prev) =>
+                              Math.min(
+                                Math.ceil(restaurantsTotal / pageSize),
+                                prev + 1
+                              )
+                            )
+                          }
+                          disabled={
+                            restaurantsPage >=
+                            Math.ceil(restaurantsTotal / pageSize)
+                          }
+                          className="px-3 py-1 text-sm border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                        >
+                          Next
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </Section>
             )}
             {active === "tours" && (
@@ -1802,6 +2166,25 @@ export default function AdminDashboard() {
         onClose={() => setShowEditPlaceModal(false)}
         onSuccess={handleEditPlaceSuccess}
         place={editingPlace}
+      />
+
+      <ViewRestaurantModal
+        isOpen={showViewRestaurantModal}
+        onClose={() => setShowViewRestaurantModal(false)}
+        restaurant={viewingRestaurant}
+      />
+
+      <CreateRestaurantModal
+        isOpen={showCreateRestaurantModal}
+        onClose={() => setShowCreateRestaurantModal(false)}
+        onSuccess={handleCreateRestaurantSuccess}
+      />
+
+      <EditRestaurantModal
+        isOpen={showEditRestaurantModal}
+        onClose={() => setShowEditRestaurantModal(false)}
+        onSuccess={handleEditRestaurantSuccess}
+        restaurant={editingRestaurant}
       />
     </div>
   );
