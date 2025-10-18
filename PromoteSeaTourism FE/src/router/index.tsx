@@ -14,6 +14,7 @@ const ArticlesPage = () => import("../pages/ArticlesPage");
 const ArticleDetail = () => import("../pages/ArticleDetail");
 const AccommodationsPage = () => import("../pages/AccommodationsPage");
 const EventsPage = () => import("../pages/EventsPage");
+const EventDetail = () => import("../pages/EventDetail");
 const PlacesPage = () => import("../pages/PlacesPage");
 const PlaceDetail = () => import("../pages/PlaceDetail");
 const RestaurantsPage = () => import("../pages/RestaurantsPage");
@@ -67,6 +68,13 @@ export const router = createBrowserRouter([
         path: "events",
         async lazy() {
           const mod = await EventsPage();
+          return { Component: mod.default };
+        },
+      },
+      {
+        path: "events/:id",
+        async lazy() {
+          const mod = await EventDetail();
           return { Component: mod.default };
         },
       },
