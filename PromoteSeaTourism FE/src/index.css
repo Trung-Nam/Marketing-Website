@@ -1,0 +1,210 @@
+@import "tailwindcss";
+
+@theme {
+  /* Ba Dong Sea Theme Colors */
+  --color-primary-50: #f0f9ff;
+  --color-primary-100: #e0f2fe;
+  --color-primary-200: #bae6fd;
+  --color-primary-300: #7dd3fc;
+  --color-primary-400: #38bdf8;
+  --color-primary-500: #0ea5e9;
+  --color-primary-600: #0284c7;
+  --color-primary-700: #0369a1;
+  --color-primary-800: #075985;
+  --color-primary-900: #0c4a6e;
+  --color-primary-950: #082f49;
+
+  /* Coral/Orange accent for warmth */
+  --color-secondary-50: #fff7ed;
+  --color-secondary-100: #ffedd5;
+  --color-secondary-200: #fed7aa;
+  --color-secondary-300: #fdba74;
+  --color-secondary-400: #fb923c;
+  --color-secondary-500: #f97316;
+  --color-secondary-600: #ea580c;
+  --color-secondary-700: #c2410c;
+  --color-secondary-800: #9a3412;
+  --color-secondary-900: #7c2d12;
+  --color-secondary-950: #431407;
+
+  /* Deep sea blue */
+  --color-ocean-50: #f0f9ff;
+  --color-ocean-100: #e0f2fe;
+  --color-ocean-200: #bae6fd;
+  --color-ocean-300: #7dd3fc;
+  --color-ocean-400: #38bdf8;
+  --color-ocean-500: #0ea5e9;
+  --color-ocean-600: #0284c7;
+  --color-ocean-700: #0369a1;
+  --color-ocean-800: #075985;
+  --color-ocean-900: #0c4a6e;
+  --color-ocean-950: #082f49;
+
+  /* Turquoise for tropical feel */
+  --color-turquoise-50: #f0fdfa;
+  --color-turquoise-100: #ccfbf1;
+  --color-turquoise-200: #99f6e4;
+  --color-turquoise-300: #5eead4;
+  --color-turquoise-400: #2dd4bf;
+  --color-turquoise-500: #14b8a6;
+  --color-turquoise-600: #0d9488;
+  --color-turquoise-700: #0f766e;
+  --color-turquoise-800: #115e59;
+  --color-turquoise-900: #134e4a;
+  --color-turquoise-950: #042f2e;
+
+  --animate-spin-slow: spin 3s linear infinite;
+  --animate-bounce-slow: bounce 2s infinite;
+}
+
+/* Base styles */
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  body {
+    @apply bg-white text-gray-900 antialiased;
+  }
+}
+
+/* Custom utilities */
+@layer utilities {
+  .hero-gradient {
+    background: linear-gradient(135deg, #0ea5e9 0%, #14b8a6 50%, #f97316 100%);
+  }
+
+  .ocean-gradient {
+    background: linear-gradient(135deg, #0284c7 0%, #0d9488 50%, #0369a1 100%);
+  }
+
+  .sea-gradient {
+    background: linear-gradient(
+      135deg,
+      #0ea5e9 0%,
+      #38bdf8 25%,
+      #5eead4 50%,
+      #2dd4bf 75%,
+      #14b8a6 100%
+    );
+  }
+
+  .ba-dong-gradient {
+    background: linear-gradient(
+      135deg,
+      #0284c7 0%,
+      #0ea5e9 25%,
+      #38bdf8 50%,
+      #5eead4 75%,
+      #f97316 100%
+    );
+  }
+
+  .tropical-gradient {
+    background: linear-gradient(135deg, #14b8a6 0%, #0ea5e9 50%, #f97316 100%);
+  }
+
+  .glass-effect {
+    backdrop-filter: blur(16px);
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  }
+
+  .glass-effect-dark {
+    backdrop-filter: blur(16px);
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  }
+
+  .floating-animation {
+    animation: floating 3s ease-in-out infinite;
+  }
+
+  .fade-in {
+    animation: fadeIn 0.6s ease-out;
+  }
+
+  .slide-up {
+    animation: slideUp 0.6s ease-out;
+  }
+
+  .wave-animation {
+    animation: wave 2s ease-in-out infinite;
+  }
+
+  .text-shadow {
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  }
+
+  .card-hover {
+    transition: all 0.3s ease;
+  }
+
+  .card-hover:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  }
+
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+
+@keyframes floating {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes wave {
+  0%,
+  100% {
+    transform: translateX(0) translateY(0) rotate(0deg);
+  }
+  25% {
+    transform: translateX(5px) translateY(-2px) rotate(1deg);
+  }
+  50% {
+    transform: translateX(0) translateY(-5px) rotate(0deg);
+  }
+  75% {
+    transform: translateX(-5px) translateY(-2px) rotate(-1deg);
+  }
+}

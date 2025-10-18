@@ -1,0 +1,100 @@
+# =========================
+# .NET / Visual Studio
+# =========================
+
+## Build results
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+## User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## VSCode
+.vscode/
+.history/
+
+## Visual Studio 2019/2022
+.vs/
+
+## Rider / JetBrains
+.idea/
+*.sln.iml
+
+## Backup & package files
+*.bak
+*.zip
+*.tar.gz
+*.rar
+
+## Configuration files
+appsettings.Development.json
+appsettings.Local.json
+appsettings.*.json
+
+## Environment files
+.env
+.env.*
+
+## Publish output
+publish/
+out/
+dist/
+
+## NuGet packages
+*.nupkg
+*.snupkg
+packages/
+*.nuspec
+*.psmdcp
+
+## Others
+*.dbmdl
+*.bak
+*.db
+*.mdf
+*.ldf
+*.sqlite
+*.sqlite3
+
+## OS generated files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# =========================
+# Git-related
+# =========================
+*.orig
+
+
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
