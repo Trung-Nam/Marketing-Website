@@ -10,11 +10,13 @@ import type {
 
 export const articleService = {
   async getArticles(params: ArticlesParams = {}): Promise<ArticlesResponse> {
-    const { page = 1, pageSize = 20 } = params;
+    const { page = 1, pageSize = 20, search, categoryId } = params;
     const response = await api.get(`/articles/list`, {
       params: {
         page,
         pageSize,
+        ...(search && { search }),
+        ...(categoryId && { categoryId }),
       },
     });
     return response.data;

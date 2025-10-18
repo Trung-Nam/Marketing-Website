@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { articleService } from "../services/articleService";
+import { categoryService } from "../services/categoryService";
 import type { ArticleDetail } from "../types/article";
+import type { Category } from "../types/category";
 import LoadingSpinner from "../components/LoadingSpinner";
 
 export default function ArticleDetailPage() {
@@ -10,9 +12,31 @@ export default function ArticleDetailPage() {
   const [article, setArticle] = useState<ArticleDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [lightboxImage, setLightboxImage] = useState<{
+    url: string;
+    alt: string;
+    caption?: string;
+  } | null>(null);
   const getReadingTime = (text: string): number => {
     const words = text?.trim().split(/\s+/).length || 0;
     return Math.max(1, Math.round(words / 200));
+  };
+
+  const getCategoryName = (categoryId: number): string => {
+    console.log("Looking for categoryId:", categoryId);
+    console.log("Available categories:", categories);
+    const category = categories.find((cat) => cat.id === categoryId);
+    console.log("Found category:", category);
+    return category?.name || "Khác";
+  };
+
+  const openLightbox = (url: string, alt: string, caption?: string) => {
+    setLightboxImage({ url, alt, caption });
+  };
+
+  const closeLightbox = () => {
+    setLightboxImage(null);
   };
 
   useEffect(() => {
@@ -24,8 +48,19 @@ export default function ArticleDetailPage() {
           setError("Không tìm thấy bài viết");
           return;
         }
-        const data = await articleService.getArticleById(Number(id));
-        setArticle(data);
+
+        // Load article and categories in parallel
+        const [articleData, categoriesData] = await Promise.all([
+          articleService.getArticleById(Number(id)),
+          categoryService.getCategories({ page: 1, pageSize: 100 }),
+        ]);
+
+        console.log("Article data:", articleData);
+        console.log("Categories data:", categoriesData);
+        console.log("Categories array:", categoriesData.data);
+
+        setArticle(articleData);
+        setCategories(categoriesData.data);
       } catch {
         setError("Không thể tải bài viết");
       } finally {
@@ -34,6 +69,27 @@ export default function ArticleDetailPage() {
     };
     load();
   }, [id]);
+
+  // Keyboard support for lightbox
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && lightboxImage) {
+        closeLightbox();
+      }
+    };
+
+    if (lightboxImage) {
+      document.addEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "unset";
+    };
+  }, [lightboxImage]);
 
   if (loading) {
     return (
@@ -122,7 +178,7 @@ export default function ArticleDetailPage() {
         <div className="bg-gradient-to-r from-ocean-600 to-turquoise-600 rounded-2xl text-white p-6 md:p-8 shadow-xl mb-8">
           <div className="text-sm mb-3 flex items-center gap-3">
             <span className="inline-flex items-center px-3 py-1 rounded-full bg-white/20 font-semibold">
-              Danh mục #{article.categoryId}
+              {article ? getCategoryName(article.categoryId) : "Danh mục"}
             </span>
             {article.isPublished && (
               <span className="inline-flex items-center px-3 py-1 rounded-full bg-white/20 font-semibold">
@@ -131,7 +187,7 @@ export default function ArticleDetailPage() {
             )}
             <span className="opacity-90">•</span>
             <span className="opacity-90">
-              {new Date(article.publishedAt).toLocaleDateString("vi-VN")}
+              {new Date(article.createdAt).toLocaleDateString("vi-VN")}
             </span>
             <span className="opacity-90">•</span>
             <span className="opacity-90">
@@ -148,14 +204,37 @@ export default function ArticleDetailPage() {
         {/* Cover */}
         {coverUrl && (
           <div className="rounded-2xl overflow-hidden shadow-xl mb-10">
-            <img
-              src={coverUrl}
-              alt={coverAlt}
-              className="w-full h-[380px] md:h-[480px] object-cover"
-              loading="lazy"
-            />
+            <button
+              onClick={() => openLightbox(coverUrl, coverAlt, cover?.caption)}
+              className="group relative w-full h-[380px] md:h-[480px] overflow-hidden"
+            >
+              <img
+                src={coverUrl}
+                alt={coverAlt}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                loading="lazy"
+              />
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors duration-300 flex items-center justify-center">
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-white text-center">
+                  <svg
+                    className="w-16 h-16 mx-auto mb-3"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"
+                    />
+                  </svg>
+                  <p className="text-lg font-semibold">Click để xem ảnh</p>
+                </div>
+              </div>
+            </button>
             {cover?.caption && (
-              <div className="px-4 py-2 text-sm text-gray-600 bg-white">
+              <div className="px-4 py-2 text-sm text-gray-600 bg-white text-center text-italic">
                 {cover.caption}
               </div>
             )}
@@ -180,12 +259,8 @@ export default function ArticleDetailPage() {
                 </h3>
                 <ul className="text-sm text-gray-600 space-y-2">
                   <li>Mã bài viết: {article.id}</li>
-                  <li>Danh mục: #{article.categoryId}</li>
+                  <li>Danh mục: {getCategoryName(article.categoryId)}</li>
                   <li>Slug: {article.slug}</li>
-                  <li>
-                    Ngày xuất bản:{" "}
-                    {new Date(article.publishedAt).toLocaleDateString("vi-VN")}
-                  </li>
                   <li>
                     Ngày tạo:{" "}
                     {new Date(article.createdAt).toLocaleDateString("vi-VN")}
@@ -206,13 +281,35 @@ export default function ArticleDetailPage() {
                   </h3>
                   <div className="grid grid-cols-3 gap-2">
                     {gallery.slice(0, 6).map((img) => (
-                      <img
+                      <button
                         key={img.linkId}
-                        src={img.url}
-                        alt={img.altText}
-                        className="w-full h-20 object-cover rounded-lg"
-                        loading="lazy"
-                      />
+                        onClick={() =>
+                          openLightbox(img.url, img.altText, img.caption)
+                        }
+                        className="group relative overflow-hidden rounded-lg"
+                      >
+                        <img
+                          src={img.url}
+                          alt={img.altText}
+                          className="w-full h-20 object-cover group-hover:scale-105 transition-transform duration-300"
+                          loading="lazy"
+                        />
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center">
+                          <svg
+                            className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"
+                            />
+                          </svg>
+                        </div>
+                      </button>
                     ))}
                   </div>
                 </div>
@@ -221,31 +318,42 @@ export default function ArticleDetailPage() {
           </aside>
         </div>
 
-        {/* Gallery */}
-        {gallery.length > 1 && (
-          <div className="mt-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">
-              Bộ sưu tập
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {gallery.map((img) => (
-                <figure
-                  key={img.linkId}
-                  className="rounded-2xl overflow-hidden shadow group bg-white"
+        {/* Lightbox Modal */}
+        {lightboxImage && (
+          <div
+            className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
+            onClick={closeLightbox}
+          >
+            <div className="relative max-w-7xl max-h-full">
+              <button
+                onClick={closeLightbox}
+                className="absolute top-4 right-4 z-10 text-white hover:text-gray-300 transition-colors"
+              >
+                <svg
+                  className="w-8 h-8"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
                 >
-                  <img
-                    src={img.url}
-                    alt={img.altText}
-                    className="w-full h-56 object-cover group-hover:scale-105 transition-transform"
-                    loading="lazy"
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
                   />
-                  {img.caption && (
-                    <figcaption className="px-4 py-2 text-sm text-gray-600">
-                      {img.caption}
-                    </figcaption>
-                  )}
-                </figure>
-              ))}
+                </svg>
+              </button>
+              <img
+                src={lightboxImage.url}
+                alt={lightboxImage.alt}
+                className="max-w-full max-h-[90vh] object-contain rounded-lg"
+                onClick={(e) => e.stopPropagation()}
+              />
+              {lightboxImage.caption && (
+                <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white p-4">
+                  <p className="text-center italic">{lightboxImage.caption}</p>
+                </div>
+              )}
             </div>
           </div>
         )}

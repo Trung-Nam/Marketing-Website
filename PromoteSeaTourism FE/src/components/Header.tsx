@@ -38,6 +38,11 @@ export default function Header() {
   };
 
   const isActive = (path: string) => {
+    if (path === "/articles") {
+      return (
+        location.pathname === path || location.pathname.startsWith("/articles/")
+      );
+    }
     return location.pathname === path;
   };
 
@@ -78,7 +83,7 @@ export default function Header() {
             </div>
 
             {/* Desktop Navigation (route-only) */}
-            <nav className="hidden md:flex space-x-8">
+            <nav className="hidden md:flex space-x-6">
               <button
                 onClick={() => navigate("/")}
                 className={`transition-colors font-medium cursor-pointer ${
@@ -98,6 +103,56 @@ export default function Header() {
                 }`}
               >
                 Bài viết
+              </button>
+              <button
+                onClick={() => navigate("/accommodations")}
+                className={`transition-colors font-medium cursor-pointer ${
+                  isActive("/accommodations")
+                    ? "text-ocean-600 border-b-2 border-ocean-600 pb-1"
+                    : "text-gray-700 hover:text-ocean-600"
+                }`}
+              >
+                Nơi nghỉ
+              </button>
+              <button
+                onClick={() => navigate("/events")}
+                className={`transition-colors font-medium cursor-pointer ${
+                  isActive("/events")
+                    ? "text-ocean-600 border-b-2 border-ocean-600 pb-1"
+                    : "text-gray-700 hover:text-ocean-600"
+                }`}
+              >
+                Sự kiện
+              </button>
+              <button
+                onClick={() => navigate("/places")}
+                className={`transition-colors font-medium cursor-pointer ${
+                  isActive("/places")
+                    ? "text-ocean-600 border-b-2 border-ocean-600 pb-1"
+                    : "text-gray-700 hover:text-ocean-600"
+                }`}
+              >
+                Địa điểm
+              </button>
+              <button
+                onClick={() => navigate("/restaurants")}
+                className={`transition-colors font-medium cursor-pointer ${
+                  isActive("/restaurants")
+                    ? "text-ocean-600 border-b-2 border-ocean-600 pb-1"
+                    : "text-gray-700 hover:text-ocean-600"
+                }`}
+              >
+                Nhà hàng
+              </button>
+              <button
+                onClick={() => navigate("/tours")}
+                className={`transition-colors font-medium cursor-pointer ${
+                  isActive("/tours")
+                    ? "text-ocean-600 border-b-2 border-ocean-600 pb-1"
+                    : "text-gray-700 hover:text-ocean-600"
+                }`}
+              >
+                Tour
               </button>
               {hasRole("Admin") && (
                 <button
@@ -261,6 +316,71 @@ export default function Header() {
                   }`}
                 >
                   Bài viết
+                </button>
+                <button
+                  onClick={() => {
+                    navigate("/accommodations");
+                    setIsMenuOpen(false);
+                  }}
+                  className={`block w-full text-left px-3 py-2 transition-colors font-medium cursor-pointer ${
+                    isActive("/accommodations")
+                      ? "text-ocean-600 bg-ocean-50 border-l-4 border-ocean-600"
+                      : "text-gray-700 hover:text-ocean-600 hover:bg-gray-50"
+                  }`}
+                >
+                  Nơi nghỉ
+                </button>
+                <button
+                  onClick={() => {
+                    navigate("/events");
+                    setIsMenuOpen(false);
+                  }}
+                  className={`block w-full text-left px-3 py-2 transition-colors font-medium cursor-pointer ${
+                    isActive("/events")
+                      ? "text-ocean-600 bg-ocean-50 border-l-4 border-ocean-600"
+                      : "text-gray-700 hover:text-ocean-600 hover:bg-gray-50"
+                  }`}
+                >
+                  Sự kiện
+                </button>
+                <button
+                  onClick={() => {
+                    navigate("/places");
+                    setIsMenuOpen(false);
+                  }}
+                  className={`block w-full text-left px-3 py-2 transition-colors font-medium cursor-pointer ${
+                    isActive("/places")
+                      ? "text-ocean-600 bg-ocean-50 border-l-4 border-ocean-600"
+                      : "text-gray-700 hover:text-ocean-600 hover:bg-gray-50"
+                  }`}
+                >
+                  Địa điểm
+                </button>
+                <button
+                  onClick={() => {
+                    navigate("/restaurants");
+                    setIsMenuOpen(false);
+                  }}
+                  className={`block w-full text-left px-3 py-2 transition-colors font-medium cursor-pointer ${
+                    isActive("/restaurants")
+                      ? "text-ocean-600 bg-ocean-50 border-l-4 border-ocean-600"
+                      : "text-gray-700 hover:text-ocean-600 hover:bg-gray-50"
+                  }`}
+                >
+                  Nhà hàng
+                </button>
+                <button
+                  onClick={() => {
+                    navigate("/tours");
+                    setIsMenuOpen(false);
+                  }}
+                  className={`block w-full text-left px-3 py-2 transition-colors font-medium cursor-pointer ${
+                    isActive("/tours")
+                      ? "text-ocean-600 bg-ocean-50 border-l-4 border-ocean-600"
+                      : "text-gray-700 hover:text-ocean-600 hover:bg-gray-50"
+                  }`}
+                >
+                  Tour
                 </button>
                 <div className="border-t border-gray-200 pt-2 mt-2">
                   {isAuthenticated && user ? (

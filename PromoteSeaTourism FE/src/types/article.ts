@@ -25,6 +25,8 @@ export interface ArticlesResponse {
 export interface ArticlesParams {
   page?: number;
   pageSize?: number;
+  search?: string;
+  categoryId?: number;
 }
 
 export interface ArticleImageLink {

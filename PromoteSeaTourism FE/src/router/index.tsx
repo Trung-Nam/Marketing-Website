@@ -11,6 +11,14 @@ const Articles = () => import("../pages/Articles");
 const ArticleDetail = () => import("../pages/ArticleDetail");
 const AdminDashboard = () => import("../pages/AdminDashboard");
 
+// Promotion Pages
+const ArticlesPage = () => import("../pages/ArticlesPage");
+const AccommodationsPage = () => import("../pages/AccommodationsPage");
+const EventsPage = () => import("../pages/EventsPage");
+const PlacesPage = () => import("../pages/PlacesPage");
+const RestaurantsPage = () => import("../pages/RestaurantsPage");
+const ToursPage = () => import("../pages/ToursPage");
+
 export const router = createBrowserRouter([
   {
     element: (
@@ -36,7 +44,7 @@ export const router = createBrowserRouter([
       {
         path: "articles",
         async lazy() {
-          const mod = await Articles();
+          const mod = await ArticlesPage();
           return { Component: mod.default };
         },
       },
@@ -44,6 +52,42 @@ export const router = createBrowserRouter([
         path: "articles/:id",
         async lazy() {
           const mod = await ArticleDetail();
+          return { Component: mod.default };
+        },
+      },
+      // Promotion Pages
+      {
+        path: "accommodations",
+        async lazy() {
+          const mod = await AccommodationsPage();
+          return { Component: mod.default };
+        },
+      },
+      {
+        path: "events",
+        async lazy() {
+          const mod = await EventsPage();
+          return { Component: mod.default };
+        },
+      },
+      {
+        path: "places",
+        async lazy() {
+          const mod = await PlacesPage();
+          return { Component: mod.default };
+        },
+      },
+      {
+        path: "restaurants",
+        async lazy() {
+          const mod = await RestaurantsPage();
+          return { Component: mod.default };
+        },
+      },
+      {
+        path: "tours",
+        async lazy() {
+          const mod = await ToursPage();
           return { Component: mod.default };
         },
       },
