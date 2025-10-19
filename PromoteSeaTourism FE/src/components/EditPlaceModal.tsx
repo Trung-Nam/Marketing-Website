@@ -157,8 +157,6 @@ export default function EditPlaceModal({
         isPublished: formData.isPublished,
       };
 
-      console.log("Updating place with data:", cleanedData);
-      console.log("Place ID:", place.id);
       await placeService.updatePlace(place.id, cleanedData);
       toast.success("Cập nhật place thành công!");
       onSuccess?.();

@@ -18,26 +18,9 @@ const getTargetTypeString = (targetType: number): string => {
 class FavoriteService {
   async getFavorites(): Promise<FavoritesListResponse> {
     try {
-      console.log("Calling API: /favorites/list");
       const response = await api.get("/favorites/list");
-      console.log("Raw API response:", response);
-      console.log("Response data:", response.data);
       return response.data;
     } catch (error: unknown) {
-      console.error("API call failed:", error);
-      if (error && typeof error === "object" && "response" in error) {
-        console.error(
-          "Error details:",
-          (error as { response?: { data?: unknown; status?: number } }).response
-            ?.data
-        );
-        console.error(
-          "Error status:",
-          (error as { response?: { data?: unknown; status?: number } }).response
-            ?.status
-        );
-      }
-
       // Return empty response structure for now
       return {
         code: 200,
@@ -85,7 +68,6 @@ class FavoriteService {
 
       return { isFavorited };
     } catch (error) {
-      console.error("Failed to check favorites:", error);
       return { isFavorited: false };
     }
   }

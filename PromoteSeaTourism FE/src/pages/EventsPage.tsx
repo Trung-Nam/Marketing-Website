@@ -52,7 +52,6 @@ const EventsPage: React.FC = () => {
         page: 1,
         pageSize: 100,
       });
-      console.log("Categories loaded:", response.data);
       setCategories(response.data);
     } catch (error) {
       console.error("Error loading categories:", error);
@@ -70,9 +69,6 @@ const EventsPage: React.FC = () => {
         allEvents.map((event) => event.category?.id || event.categoryId)
       ),
     ];
-
-    console.log("Available category IDs from events:", usedCategoryIds);
-    console.log("All categories:", categories);
 
     // Return only categories that have events
     return categories.filter((category) =>
@@ -96,13 +92,11 @@ const EventsPage: React.FC = () => {
 
     // Filter by category
     if (selectedCategory !== "all") {
-      console.log("Filtering by category:", selectedCategory);
       filtered = filtered.filter(
         (event) =>
           (event.category?.id || event.categoryId) ===
           parseInt(selectedCategory)
       );
-      console.log("Filtered events count:", filtered.length);
     }
 
     setFilteredEvents(filtered);

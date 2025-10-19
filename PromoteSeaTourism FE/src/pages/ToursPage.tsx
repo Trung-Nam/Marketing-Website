@@ -34,7 +34,6 @@ const ToursPage: React.FC = () => {
         pageSize: 100, // Load all tours for client-side filtering
       });
 
-      console.log("Tours API response:", response); // Debug log
       setAllTours(response.data);
     } catch (error) {
       console.error("Error loading tours:", error);

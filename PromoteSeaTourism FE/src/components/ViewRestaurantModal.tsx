@@ -31,8 +31,6 @@ export default function ViewRestaurantModal({
     setLoading(true);
     try {
       const detail = await restaurantService.getRestaurantById(restaurant.id);
-      console.log("Restaurant detail loaded:", detail);
-      console.log("Category from restaurant:", detail.category);
       setRestaurantDetail(detail);
     } catch (error) {
       console.error("Error loading restaurant detail:", error);
@@ -60,24 +58,16 @@ export default function ViewRestaurantModal({
 
   const getCategoryName = (category: any, categoryId?: number) => {
     if (category && category.name) {
-      console.log("Category object:", category);
       return category.name;
     }
 
     if (categoryId && categories.length > 0) {
       const foundCategory = categories.find((cat) => cat.id === categoryId);
       if (foundCategory) {
-        console.log("Found category by ID:", foundCategory);
         return foundCategory.name;
       }
     }
 
-    console.log(
-      "Category is null/undefined:",
-      category,
-      "categoryId:",
-      categoryId
-    );
     return "Không có";
   };
 

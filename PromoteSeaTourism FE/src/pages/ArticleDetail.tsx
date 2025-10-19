@@ -26,10 +26,7 @@ export default function ArticleDetailPage() {
   };
 
   const getCategoryName = (categoryId: number): string => {
-    console.log("Looking for categoryId:", categoryId);
-    console.log("Available categories:", categories);
     const category = categories.find((cat) => cat.id === categoryId);
-    console.log("Found category:", category);
     return category?.name || "Khác";
   };
 
@@ -56,10 +53,6 @@ export default function ArticleDetailPage() {
           articleService.getArticleById(Number(id)),
           categoryService.getCategories({ page: 1, pageSize: 100 }),
         ]);
-
-        console.log("Article data:", articleData);
-        console.log("Categories data:", categoriesData);
-        console.log("Categories array:", categoriesData.data);
 
         setArticle(articleData);
         setCategories(categoriesData.data);

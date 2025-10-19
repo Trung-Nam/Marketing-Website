@@ -83,7 +83,6 @@ export default function EditRestaurantModal({
     setDetailLoading(true);
     try {
       const detail = await restaurantService.getRestaurantById(restaurant.id);
-      console.log("Restaurant detail loaded:", detail);
       setRestaurantDetail(detail);
 
       // Populate form data
@@ -252,9 +251,6 @@ export default function EditRestaurantModal({
 
     setLoading(true);
     try {
-      console.log("Updating restaurant with data:", formData);
-      console.log("New images:", newImages);
-
       const updateData: UpdateRestaurantRequest = {
         ...formData,
         addImages: newImages.filter((img) => img.url.trim() !== ""),

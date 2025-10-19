@@ -99,9 +99,6 @@ export default function CreateEventModal({
 
     setLoading(true);
     try {
-      console.log("Creating event with data:", formData);
-      console.log("Category ID:", formData.categoryId);
-      console.log("Place ID:", formData.placeId);
       await eventService.createEvent(formData);
       toast.success("Tạo event thành công!");
       onSuccess?.();
@@ -177,15 +174,10 @@ export default function CreateEventModal({
 
   const setCoverImage = useCallback((index: number) => {
     setFormData((prev) => {
-      console.log("Setting cover image at index:", index);
-      console.log("Current images before:", prev.images);
-
       const updatedImages = prev.images.map((img, i) => ({
         ...img,
         isCover: i === index,
       }));
-
-      console.log("Updated images:", updatedImages);
 
       return {
         ...prev,

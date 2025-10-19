@@ -26,29 +26,19 @@ const FavoritesPage: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      console.log("Loading favorites...");
-
-      // Test API call
       const response = await favoriteService.getFavorites();
-      console.log("Favorites API response:", response);
-      console.log("Response type:", typeof response);
-      console.log("Response keys:", Object.keys(response));
 
       if (response && response.data) {
         // Handle different response formats
         if (Array.isArray(response.data)) {
-          console.log("Setting favorites array:", response.data);
           setFavorites(response.data);
         } else {
-          console.warn("Unexpected response format:", response.data);
           setFavorites([]);
         }
       } else {
-        console.warn("No data in favorites response");
         setFavorites([]);
       }
     } catch (error) {
-      console.error("Error loading favorites:", error);
       setError("Không thể tải danh sách yêu thích. Vui lòng thử lại sau.");
       setFavorites([]);
     } finally {
@@ -278,19 +268,6 @@ const FavoritesPage: React.FC = () => {
                   className="px-4 py-2 bg-ocean-600 text-white rounded-lg hover:bg-ocean-700 transition-colors text-sm mr-2"
                 >
                   Test API Call
-                </button>
-                <button
-                  onClick={() => {
-                    console.log(
-                      "API Base URL:",
-                      import.meta.env.VITE_API_BASE_URL
-                    );
-                    console.log("Is Authenticated:", isAuthenticated);
-                    console.log("User:", useAuthStore.getState().user);
-                  }}
-                  className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm"
-                >
-                  Debug Info
                 </button>
               </div>
             </div>

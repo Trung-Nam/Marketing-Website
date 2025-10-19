@@ -177,9 +177,6 @@ export default function EditEventModal({
 
     setLoading(true);
     try {
-      console.log("Updating event with data:", formData);
-      console.log("New images:", newImages);
-
       const updateData: UpdateEventRequest = {
         ...formData,
         addImages: newImages.filter((img) => img.url.trim() !== ""),

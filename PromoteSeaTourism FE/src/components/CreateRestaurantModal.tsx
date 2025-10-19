@@ -181,9 +181,6 @@ export default function CreateRestaurantModal({
 
     setLoading(true);
     try {
-      console.log("Creating restaurant with data:", formData);
-      console.log("Images:", images);
-
       const restaurantData: CreateRestaurantRequest = {
         ...formData,
         images: images.filter((img) => img.url.trim() !== ""), // Only include images with URLs

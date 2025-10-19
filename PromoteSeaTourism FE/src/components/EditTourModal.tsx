@@ -116,7 +116,6 @@ export default function EditTourModal({
   };
 
   const setCoverExistingImage = (imageId: number) => {
-    console.log("Setting cover image:", imageId);
     setFormData((prev) => ({
       ...prev,
       coverImageId: imageId,
@@ -226,8 +225,6 @@ export default function EditTourModal({
 
     setLoading(true);
     try {
-      console.log("Updating tour with data:", formData);
-      console.log("New images:", newImages);
 
       const updateData: UpdateTourRequest = {
         ...formData,
@@ -476,8 +473,6 @@ export default function EditTourModal({
                             !formData.removeLinkIds?.includes(image.linkId)
                         )
                         .map((image) => {
-                          console.log("Full image object:", image);
-                          console.log(
                             "Rendering image:",
                             image.linkId,
                             "coverImageId:",

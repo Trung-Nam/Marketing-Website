@@ -56,15 +56,12 @@ export default function Home() {
     const loadData = async () => {
       try {
         setLoading(true);
-        console.log("Loading home data...");
 
         // Load articles
-        console.log("Loading articles...");
         const articlesResponse = await articleService.getArticles({
           page: 1,
           pageSize: 6,
         });
-        console.log("Articles response:", articlesResponse);
         const articlesData = articlesResponse.data.map((article) => ({
           id: article.id,
           title: article.title,
@@ -73,16 +70,13 @@ export default function Home() {
           type: "article" as const,
           createdAt: article.createdAt,
         }));
-        console.log("Articles data:", articlesData);
         setArticles(articlesData);
 
         // Load events
-        console.log("Loading events...");
         const eventsResponse = await eventService.getEvents({
           page: 1,
           pageSize: 6,
         });
-        console.log("Events response:", eventsResponse);
         const eventsData = eventsResponse.data.map((event) => ({
           id: event.id,
           title: event.title,
@@ -91,16 +85,13 @@ export default function Home() {
           type: "event" as const,
           createdAt: event.createdAt,
         }));
-        console.log("Events data:", eventsData);
         setEvents(eventsData);
 
         // Load tours
-        console.log("Loading tours...");
         const toursResponse = await tourService.getTours({
           page: 1,
           pageSize: 6,
         });
-        console.log("Tours response:", toursResponse);
         const toursData = toursResponse.data.map((tour) => ({
           id: tour.id,
           title: tour.name,
@@ -109,17 +100,14 @@ export default function Home() {
           type: "tour" as const,
           createdAt: tour.createdAt,
         }));
-        console.log("Tours data:", toursData);
         setTours(toursData);
 
         // Load accommodations
-        console.log("Loading accommodations...");
         const accommodationsResponse =
           await accommodationService.getAccommodations({
             page: 1,
             pageSize: 6,
           });
-        console.log("Accommodations response:", accommodationsResponse);
         const accommodationsData = accommodationsResponse.data.map(
           (accommodation) => ({
             id: accommodation.id,
@@ -130,16 +118,13 @@ export default function Home() {
             createdAt: accommodation.createdAt,
           })
         );
-        console.log("Accommodations data:", accommodationsData);
         setAccommodations(accommodationsData);
 
         // Load places
-        console.log("Loading places...");
         const placesResponse = await placeService.getPlaces({
           page: 1,
           pageSize: 6,
         });
-        console.log("Places response:", placesResponse);
         const placesData = placesResponse.data.map((place) => ({
           id: place.id,
           title: place.name,
@@ -148,16 +133,13 @@ export default function Home() {
           type: "place" as const,
           createdAt: place.createdAt,
         }));
-        console.log("Places data:", placesData);
         setPlaces(placesData);
 
         // Load restaurants
-        console.log("Loading restaurants...");
         const restaurantsResponse = await restaurantService.getRestaurants({
           page: 1,
           pageSize: 6,
         });
-        console.log("Restaurants response:", restaurantsResponse);
         const restaurantsData = restaurantsResponse.data.map((restaurant) => ({
           id: restaurant.id,
           title: restaurant.name,
@@ -166,11 +148,8 @@ export default function Home() {
           type: "restaurant" as const,
           createdAt: restaurant.createdAt,
         }));
-        console.log("Restaurants data:", restaurantsData);
         setRestaurants(restaurantsData);
       } catch (error) {
-        console.error("Error loading home data:", error);
-        console.error("Error details:", error);
       } finally {
         setLoading(false);
       }

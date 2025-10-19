@@ -30,8 +30,6 @@ export const placeService = {
   },
 
   async updatePlace(id: number, placeData: UpdatePlaceRequest) {
-    console.log("Sending PUT request to:", `/places/update/${id}`);
-    console.log("Request body:", placeData);
     const response = await api.put(`/places/update/${id}`, placeData);
     return response.data;
   },

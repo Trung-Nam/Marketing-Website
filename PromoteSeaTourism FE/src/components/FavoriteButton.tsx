@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { favoriteService } from "../services/favoriteService";
 import { useAuthStore } from "../store/useAuthStore";
+import { toast } from "react-toastify";
 
 interface FavoriteButtonProps {
   targetType: number;
@@ -41,7 +42,6 @@ const FavoriteButton: React.FC<FavoriteButtonProps> = ({
         const isFavorited = response.isFavorited || false;
         setIsFavorited(isFavorited);
       } catch (error) {
-        console.error("Error checking favorite status:", error);
         setIsFavorited(initialIsFavorited || false);
       } finally {
         setIsChecking(false);
@@ -61,14 +61,15 @@ const FavoriteButton: React.FC<FavoriteButtonProps> = ({
         await favoriteService.removeFavorite(targetType, targetId);
         setIsFavorited(false);
         onToggle?.(false);
+        toast.success("Đã xóa khỏi danh sách yêu thích");
       } else {
         await favoriteService.addFavorite(targetType, targetId);
         setIsFavorited(true);
         onToggle?.(true);
+        toast.success("Đã thêm vào danh sách yêu thích");
       }
     } catch (error) {
-      console.error("Error toggling favorite:", error);
-      // You might want to show a toast notification here
+      // Error toast will be handled by axios interceptor
     } finally {
       setIsLoading(false);
     }

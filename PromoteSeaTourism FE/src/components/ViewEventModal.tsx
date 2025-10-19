@@ -33,9 +33,6 @@ export default function ViewEventModal({
     setLoading(true);
     try {
       const detail = await eventService.getEventById(event.id);
-      console.log("Event detail loaded:", detail);
-      console.log("Category from event:", detail.category);
-      console.log("Place from event:", detail.place);
       setEventDetail(detail);
     } catch (error) {
       console.error("Error loading event detail:", error);
@@ -79,19 +76,15 @@ export default function ViewEventModal({
 
   const getCategoryName = (category: any) => {
     if (!category) {
-      console.log("Category is null/undefined:", category);
       return "Không có";
     }
-    console.log("Category object:", category);
     return category.name || "Unknown";
   };
 
   const getPlaceName = (place: any) => {
     if (!place) {
-      console.log("Place is null/undefined:", place);
       return "Không có";
     }
-    console.log("Place object:", place);
     return place.name || "Không có";
   };
 
