@@ -162,16 +162,6 @@ export default function AdminDashboard() {
     }
   }, [categoriesPage, pageSize]);
 
-  const getRestaurantCategoryName = useCallback(
-    (categoryId: number) => {
-      const category = restaurantCategories.find(
-        (cat) => cat.id === categoryId
-      );
-      return category ? category.name : `Category ${categoryId}`;
-    },
-    [restaurantCategories]
-  );
-
   const loadArticles = useCallback(async () => {
     setLoading(true);
     try {
@@ -198,11 +188,6 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error("Error loading categories for articles:", error);
     }
-  };
-
-  const getCategoryName = (categoryId: number) => {
-    const category = articleCategories.find((cat) => cat.id === categoryId);
-    return category ? category.name : `ID: ${categoryId}`;
   };
 
   const handleCreateArticleSuccess = () => {
@@ -896,7 +881,7 @@ export default function AdminDashboard() {
                                     {article.slug}
                                   </td>
                                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    {getCategoryName(article.categoryId)}
+                                    {article.category?.name || "Chưa phân loại"}
                                   </td>
                                   <td className="px-6 py-4 whitespace-nowrap">
                                     <span
@@ -1974,7 +1959,10 @@ export default function AdminDashboard() {
                                     <div className="flex-shrink-0 h-10 w-10">
                                       <img
                                         className="h-10 w-10 rounded-full object-cover"
-                                        src={restaurant.thumbnailUrl}
+                                        src={
+                                          restaurant.coverImage?.url ||
+                                          restaurant.thumbnailUrl
+                                        }
                                         alt={restaurant.name}
                                         loading="lazy"
                                         onError={(e) => {
@@ -2000,9 +1988,8 @@ export default function AdminDashboard() {
                                   {restaurant.priceRangeText}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                  {getRestaurantCategoryName(
-                                    restaurant.categoryId
-                                  )}
+                                  {restaurant.category?.name ||
+                                    "Chưa phân loại"}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                   <span
@@ -2229,11 +2216,21 @@ export default function AdminDashboard() {
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                   <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center">
-                                    {tour.thumbnailUrl ? (
+                                    {tour.images?.find((img) => img.isCover)
+                                      ?.url || tour.thumbnailUrl ? (
                                       <img
-                                        src={tour.thumbnailUrl}
+                                        src={
+                                          tour.images?.find(
+                                            (img) => img.isCover
+                                          )?.url || tour.thumbnailUrl
+                                        }
                                         alt={tour.name}
                                         className="w-full h-full object-cover"
+                                        loading="lazy"
+                                        onError={(e) => {
+                                          (e.target as HTMLImageElement).src =
+                                            "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 24 24'%3E%3Cpath fill='%23ccc' d='M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z'/%3E%3C/svg%3E";
+                                        }}
                                       />
                                     ) : (
                                       <div className="w-8 h-8 bg-gray-300 rounded flex items-center justify-center">

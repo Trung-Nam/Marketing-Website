@@ -125,13 +125,6 @@ export default function EditTourModal({
           isCover: false,
         })) || [],
     }));
-    // Reset all existing images to not be cover
-    setExistingImages((prev) =>
-      prev.map((img) => ({
-        ...img,
-        isCover: false,
-      }))
-    );
   };
 
   const removeExistingImage = (imageId: number) => {
@@ -167,13 +160,6 @@ export default function EditTourModal({
       prev.map((img, i) => ({
         ...img,
         isCover: i === index,
-      }))
-    );
-    // Reset all existing images to not be cover
-    setExistingImages((prev) =>
-      prev.map((img) => ({
-        ...img,
-        isCover: false,
       }))
     );
     // Reset coverImageId to 0 since we're using a new image
@@ -225,7 +211,6 @@ export default function EditTourModal({
 
     setLoading(true);
     try {
-
       const updateData: UpdateTourRequest = {
         ...formData,
         addImages: newImages.filter((img) => img.url.trim() !== ""),
@@ -473,11 +458,6 @@ export default function EditTourModal({
                             !formData.removeLinkIds?.includes(image.linkId)
                         )
                         .map((image) => {
-                            "Rendering image:",
-                            image.linkId,
-                            "coverImageId:",
-                            formData.coverImageId
-                          );
                           return (
                             <div
                               key={image.linkId}

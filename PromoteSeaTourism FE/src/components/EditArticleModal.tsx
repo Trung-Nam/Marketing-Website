@@ -60,7 +60,7 @@ export default function EditArticleModal({
         slug: article.slug,
         summary: article.summary || "",
         content: article.content || "",
-        categoryId: article.categoryId || 0,
+        categoryId: article.category?.id || article.categoryId || 0,
         isPublished: article.isPublished,
         publishedAt: article.publishedAt || "",
         addImages: [],
@@ -93,6 +93,21 @@ export default function EditArticleModal({
     try {
       const detail = await articleService.getArticleById(article.id);
       setArticleDetail(detail);
+
+      // Update form data with the detailed information
+      setFormData({
+        title: detail.title,
+        slug: detail.slug,
+        summary: detail.summary || "",
+        content: detail.content || "",
+        categoryId: detail.category?.id || detail.categoryId || 0,
+        isPublished: detail.isPublished,
+        publishedAt: detail.publishedAt || "",
+        addImages: [],
+        attachMediaIds: [],
+        removeLinkIds: [],
+        coverImageId: detail.coverImageId || undefined,
+      });
     } catch (error) {
       console.error("Error loading article detail:", error);
       toast.error("Không thể tải chi tiết bài viết!");

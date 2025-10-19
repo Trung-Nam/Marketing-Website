@@ -8,7 +8,7 @@ interface VideoSectionProps {
 }
 
 export default function VideoSection({
-  videoUrl = "https://www.youtube.com/embed/dQw4w9WgXcQ", // Placeholder video
+  videoUrl = "https://www.youtube.com/embed/ag48Rl400pQ?controls=0&rel=0&playsinline=1&enablejsapi=1&origin=https%3A%2F%2Ftopasecolodge.com&widgetid=1&forigin=https%3A%2F%2Ftopasecolodge.com%2F&aoriginsup=1&vf=2", // Placeholder video
   thumbnailUrl = "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
   title = "Khám phá vẻ đẹp biển Ba Động",
   description = "Xem video để trải nghiệm vẻ đẹp hoang sơ và tuyệt vời của biển Ba Động",
