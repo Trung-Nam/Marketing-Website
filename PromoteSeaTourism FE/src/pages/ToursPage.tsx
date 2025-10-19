@@ -4,36 +4,38 @@ import { tourService } from "../services/tourService";
 import { Tour } from "../types/tour";
 import LoadingSpinner from "../components/LoadingSpinner";
 import Pagination from "../components/Pagination";
+import { getTourCoverImageUrl } from "../utils/tourUtils";
 
 const ToursPage: React.FC = () => {
-  const [tours, setTours] = useState<Tour[]>([]);
+  const [allTours, setAllTours] = useState<Tour[]>([]);
+  const [filteredTours, setFilteredTours] = useState<Tour[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
-  const [priceRange, setPriceRange] = useState<string>("all");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [duration, setDuration] = useState<string>("all");
 
   const pageSize = 9;
 
   useEffect(() => {
     loadTours();
-  }, [currentPage, searchTerm, priceRange, selectedCategory, duration]);
+  }, []);
+
+  useEffect(() => {
+    filterTours();
+  }, [allTours, searchTerm, selectedCategory]);
 
   const loadTours = async () => {
     try {
       setLoading(true);
       const response = await tourService.getTours({
-        page: currentPage,
-        pageSize,
-        search: searchTerm || undefined,
-        categoryId:
-          selectedCategory !== "all" ? parseInt(selectedCategory) : undefined,
+        page: 1,
+        pageSize: 100, // Load all tours for client-side filtering
       });
 
-      setTours(response.data);
-      setTotalPages(Math.ceil(response.total / pageSize));
+      console.log("Tours API response:", response); // Debug log
+      setAllTours(response.data);
     } catch (error) {
       console.error("Error loading tours:", error);
     } finally {
@@ -41,10 +43,37 @@ const ToursPage: React.FC = () => {
     }
   };
 
+  const filterTours = () => {
+    let filtered = [...allTours];
+
+    // Filter by search term
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(
+        (tour) =>
+          tour.name.toLowerCase().includes(term) ||
+          tour.summary.toLowerCase().includes(term) ||
+          tour.description.toLowerCase().includes(term) ||
+          tour.itinerary.toLowerCase().includes(term)
+      );
+    }
+
+    // Filter by category
+    if (selectedCategory !== "all") {
+      filtered = filtered.filter(
+        (tour) => tour.category?.id === parseInt(selectedCategory)
+      );
+    }
+
+    setFilteredTours(filtered);
+    setTotalPages(Math.ceil(filtered.length / pageSize));
+    setTotalItems(filtered.length);
+    setCurrentPage(1);
+  };
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    setCurrentPage(1);
-    loadTours();
+    filterTours();
   };
 
   const formatPrice = (price: number) => {
@@ -54,32 +83,14 @@ const ToursPage: React.FC = () => {
     }).format(price);
   };
 
-  const getPriceRangeLabel = (range: string) => {
-    switch (range) {
-      case "budget":
-        return "Dưới 500k";
-      case "mid":
-        return "500k - 1M";
-      case "high":
-        return "1M - 2M";
-      case "luxury":
-        return "Trên 2M";
-      default:
-        return "Tất cả";
-    }
-  };
-
-  const getDurationLabel = (duration: string) => {
-    switch (duration) {
-      case "half":
-        return "Nửa ngày";
-      case "full":
-        return "Cả ngày";
-      case "multi":
-        return "Nhiều ngày";
-      default:
-        return "Tất cả";
-    }
+  const getAvailableCategories = () => {
+    const categoryMap = new Map();
+    allTours.forEach((tour) => {
+      if (tour.category) {
+        categoryMap.set(tour.category.id, tour.category);
+      }
+    });
+    return Array.from(categoryMap.values());
   };
 
   const renderStars = (rating: number) => {
@@ -113,36 +124,15 @@ const ToursPage: React.FC = () => {
             </p>
 
             {/* Search Bar */}
-            <form onSubmit={handleSearch} className="max-w-5xl mx-auto">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <form onSubmit={handleSearch} className="max-w-2xl mx-auto">
+              <div className="flex gap-2">
                 <input
                   type="text"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Tìm kiếm tour..."
-                  className="px-6 py-4 rounded-lg bg-white/90 backdrop-blur-sm border border-white/30 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white focus:bg-white shadow-lg"
+                  className="flex-1 px-6 py-4 rounded-lg bg-white/90 backdrop-blur-sm border border-white/30 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white focus:bg-white shadow-lg"
                 />
-                <select
-                  value={priceRange}
-                  onChange={(e) => setPriceRange(e.target.value)}
-                  className="px-6 py-4 rounded-lg bg-white/90 backdrop-blur-sm border border-white/30 text-gray-900 focus:outline-none focus:ring-2 focus:ring-white focus:bg-white shadow-lg"
-                >
-                  <option value="all">Tất cả giá</option>
-                  <option value="budget">Dưới 500k</option>
-                  <option value="mid">500k - 1M</option>
-                  <option value="high">1M - 2M</option>
-                  <option value="luxury">Trên 2M</option>
-                </select>
-                <select
-                  value={duration}
-                  onChange={(e) => setDuration(e.target.value)}
-                  className="px-6 py-4 rounded-lg bg-white/90 backdrop-blur-sm border border-white/30 text-gray-900 focus:outline-none focus:ring-2 focus:ring-white focus:bg-white shadow-lg"
-                >
-                  <option value="all">Tất cả thời gian</option>
-                  <option value="half">Nửa ngày</option>
-                  <option value="full">Cả ngày</option>
-                  <option value="multi">Nhiều ngày</option>
-                </select>
                 <button
                   type="submit"
                   className="px-8 py-4 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-colors font-medium"
@@ -170,46 +160,19 @@ const ToursPage: React.FC = () => {
             >
               Tất cả
             </button>
-            <button
-              onClick={() => setSelectedCategory("1")}
-              className={`px-6 py-3 rounded-full transition-colors ${
-                selectedCategory === "1"
-                  ? "bg-ocean-600 text-white"
-                  : "bg-white text-gray-700 hover:bg-ocean-50"
-              }`}
-            >
-              Tour biển
-            </button>
-            <button
-              onClick={() => setSelectedCategory("2")}
-              className={`px-6 py-3 rounded-full transition-colors ${
-                selectedCategory === "2"
-                  ? "bg-ocean-600 text-white"
-                  : "bg-white text-gray-700 hover:bg-ocean-50"
-              }`}
-            >
-              Tour đảo
-            </button>
-            <button
-              onClick={() => setSelectedCategory("3")}
-              className={`px-6 py-3 rounded-full transition-colors ${
-                selectedCategory === "3"
-                  ? "bg-ocean-600 text-white"
-                  : "bg-white text-gray-700 hover:bg-ocean-50"
-              }`}
-            >
-              Tour lặn
-            </button>
-            <button
-              onClick={() => setSelectedCategory("4")}
-              className={`px-6 py-3 rounded-full transition-colors ${
-                selectedCategory === "4"
-                  ? "bg-ocean-600 text-white"
-                  : "bg-white text-gray-700 hover:bg-ocean-50"
-              }`}
-            >
-              Tour câu cá
-            </button>
+            {getAvailableCategories().map((category) => (
+              <button
+                key={category.id}
+                onClick={() => setSelectedCategory(category.id.toString())}
+                className={`px-6 py-3 rounded-full transition-colors ${
+                  selectedCategory === category.id.toString()
+                    ? "bg-ocean-600 text-white"
+                    : "bg-white text-gray-700 hover:bg-ocean-50"
+                }`}
+              >
+                {category.name}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -218,109 +181,112 @@ const ToursPage: React.FC = () => {
           <div className="flex justify-center py-12">
             <LoadingSpinner />
           </div>
-        ) : tours.length === 0 ? (
+        ) : filteredTours.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-gray-500 text-lg">Không tìm thấy tour nào</div>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {tours.map((tour) => (
-              <Link
-                key={tour.id}
-                to={`/tours/${tour.id}`}
-                className="group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden transform hover:-translate-y-2"
-              >
-                {/* Tour Image */}
-                <div className="relative h-64 overflow-hidden">
-                  <img
-                    src={tour.thumbnailUrl || "/default-avatar.svg"}
-                    alt={tour.name}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+            {filteredTours
+              .slice((currentPage - 1) * pageSize, currentPage * pageSize)
+              .map((tour) => (
+                <Link
+                  key={tour.id}
+                  to={`/tours/${tour.id}`}
+                  className="group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden transform hover:-translate-y-2"
+                >
+                  {/* Tour Image */}
+                  <div className="relative h-64 overflow-hidden">
+                    <img
+                      src={getTourCoverImageUrl(tour)}
+                      alt={tour.name}
+                      loading="lazy"
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
 
-                  {/* Price Badge */}
-                  <div className="absolute top-4 right-4">
-                    <div className="bg-white/90 text-gray-800 px-3 py-2 rounded-lg font-bold">
-                      {formatPrice(tour.priceFrom)}
-                    </div>
-                  </div>
-
-                  {/* Category Badge */}
-                  <div className="absolute top-4 left-4">
-                    <span className="px-3 py-1 bg-white/90 text-gray-800 text-sm font-medium rounded-full">
-                      {tour.category?.name || "Khác"}
-                    </span>
-                  </div>
-
-                  {/* Duration Badge */}
-                  <div className="absolute bottom-4 left-4">
-                    <span className="px-3 py-1 bg-ocean-600/90 text-white text-sm font-medium rounded-full">
-                      Cả ngày
-                    </span>
-                  </div>
-                </div>
-
-                {/* Tour Content */}
-                <div className="p-6">
-                  <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-ocean-600 transition-colors">
-                    {tour.name}
-                  </h3>
-
-                  <p className="text-gray-600 mb-4 line-clamp-2">
-                    {tour.summary}
-                  </p>
-
-                  {/* Rating */}
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="flex">
-                      {renderStars(4)} {/* Assuming 4-star rating */}
-                    </div>
-                    <span className="text-sm text-gray-500">
-                      4.3 (67 đánh giá)
-                    </span>
-                  </div>
-
-                  {/* Price Range */}
-                  <div className="text-lg font-bold text-ocean-600 mb-4">
-                    Từ {formatPrice(tour.priceFrom)}
-                  </div>
-
-                  {/* Features */}
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    <span className="px-2 py-1 bg-ocean-50 text-ocean-600 text-xs rounded-full">
-                      Hướng dẫn viên
-                    </span>
-                    <span className="px-2 py-1 bg-ocean-50 text-ocean-600 text-xs rounded-full">
-                      Bữa trưa
-                    </span>
-                    <span className="px-2 py-1 bg-ocean-50 text-ocean-600 text-xs rounded-full">
-                      Vận chuyển
-                    </span>
-                  </div>
-
-                  {/* Itinerary Preview */}
-                  {tour.itinerary && (
-                    <div className="text-sm text-gray-500">
-                      <div className="flex items-center gap-2">
-                        <svg
-                          className="w-4 h-4"
-                          fill="currentColor"
-                          viewBox="0 0 20 20"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                        <span>Lịch trình chi tiết</span>
+                    {/* Price Badge */}
+                    <div className="absolute top-4 right-4">
+                      <div className="bg-white/90 text-gray-800 px-3 py-2 rounded-lg font-bold">
+                        {formatPrice(tour.priceFrom)}
                       </div>
                     </div>
-                  )}
-                </div>
-              </Link>
-            ))}
+
+                    {/* Category Badge */}
+                    <div className="absolute top-4 left-4">
+                      <span className="px-3 py-1 bg-white/90 text-gray-800 text-sm font-medium rounded-full">
+                        {tour.category?.name || "Khác"}
+                      </span>
+                    </div>
+
+                    {/* Duration Badge */}
+                    <div className="absolute bottom-4 left-4">
+                      <span className="px-3 py-1 bg-ocean-600/90 text-white text-sm font-medium rounded-full">
+                        Cả ngày
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Tour Content */}
+                  <div className="p-6">
+                    <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-ocean-600 transition-colors">
+                      {tour.name}
+                    </h3>
+
+                    <p className="text-gray-600 mb-4 line-clamp-2">
+                      {tour.summary}
+                    </p>
+
+                    {/* Rating */}
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="flex">
+                        {renderStars(4)} {/* Assuming 4-star rating */}
+                      </div>
+                      <span className="text-sm text-gray-500">
+                        4.3 (67 đánh giá)
+                      </span>
+                    </div>
+
+                    {/* Price Range */}
+                    <div className="text-lg font-bold text-ocean-600 mb-4">
+                      Từ {formatPrice(tour.priceFrom)}
+                    </div>
+
+                    {/* Features */}
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      <span className="px-2 py-1 bg-ocean-50 text-ocean-600 text-xs rounded-full">
+                        Hướng dẫn viên
+                      </span>
+                      <span className="px-2 py-1 bg-ocean-50 text-ocean-600 text-xs rounded-full">
+                        Bữa trưa
+                      </span>
+                      <span className="px-2 py-1 bg-ocean-50 text-ocean-600 text-xs rounded-full">
+                        Vận chuyển
+                      </span>
+                    </div>
+
+                    {/* Itinerary Preview */}
+                    {tour.itinerary && (
+                      <div className="text-sm text-gray-500">
+                        <div className="flex items-center gap-2">
+                          <svg
+                            className="w-4 h-4"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                          <span>Lịch trình chi tiết</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </Link>
+              ))}
           </div>
         )}
 
@@ -332,6 +298,16 @@ const ToursPage: React.FC = () => {
               totalPages={totalPages}
               onPageChange={setCurrentPage}
             />
+          </div>
+        )}
+
+        {/* Results Summary */}
+        {!loading && filteredTours.length > 0 && (
+          <div className="text-center text-gray-600 mt-4">
+            Hiển thị{" "}
+            {Math.min((currentPage - 1) * pageSize + 1, filteredTours.length)} -{" "}
+            {Math.min(currentPage * pageSize, filteredTours.length)} trong tổng
+            số {filteredTours.length} tour
           </div>
         )}
       </div>

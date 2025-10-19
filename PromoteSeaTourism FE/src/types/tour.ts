@@ -8,7 +8,13 @@ export interface Tour {
   itinerary: string;
   categoryId: number;
   createdAt: string;
-  thumbnailUrl: string;
+  thumbnailUrl?: string;
+  images?: TourImage[];
+  category?: {
+    id: number;
+    name: string;
+    slug: string;
+  };
 }
 
 export interface TourDetail extends Tour {

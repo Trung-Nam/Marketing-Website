@@ -2,15 +2,20 @@ import type { Event, EventDetail } from "../types/event";
 
 /**
  * Get cover image URL for an event
- * Priority: thumbnailUrl -> coverImageId match -> isCover flag -> first image -> default
+ * Priority: coverImage.url -> thumbnailUrl -> coverImageId match -> isCover flag -> first image -> default
  */
 export const getEventCoverImageUrl = (event: Event | EventDetail): string => {
-  // First priority: use thumbnailUrl if available
+  // First priority: use coverImage.url if available
+  if (event.coverImage?.url) {
+    return event.coverImage.url;
+  }
+
+  // Second priority: use thumbnailUrl if available
   if (event.thumbnailUrl) {
     return event.thumbnailUrl;
   }
 
-  // Second priority: try to find cover image from images array
+  // Third priority: try to find cover image from images array
   if (event.images && event.images.length > 0) {
     const coverImage =
       event.images.find((img) => img.id === event.coverImageId) ||
@@ -35,7 +40,16 @@ export const getEventCoverImageInfo = (
   alt: string;
   caption?: string;
 } => {
-  // First priority: use thumbnailUrl if available
+  // First priority: use coverImage object if available
+  if (event.coverImage?.url) {
+    return {
+      url: event.coverImage.url,
+      alt: event.coverImage.altText || event.title,
+      caption: event.coverImage.caption,
+    };
+  }
+
+  // Second priority: use thumbnailUrl if available
   if (event.thumbnailUrl) {
     return {
       url: event.thumbnailUrl,
@@ -44,7 +58,7 @@ export const getEventCoverImageInfo = (
     };
   }
 
-  // Second priority: try to find cover image from images array
+  // Third priority: try to find cover image from images array
   if (event.images && event.images.length > 0) {
     const coverImage =
       event.images.find((img) => img.id === event.coverImageId) ||

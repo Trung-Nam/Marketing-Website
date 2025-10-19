@@ -59,28 +59,66 @@ namespace PromoteSeaTourism.Controllers
                     .ToDictionaryAsync(x => x.Id, x => x.Url);
 
             var ids = pageItems.Select(x => x.Id).ToArray();
-            var orderedLinks = await _db.ImageLinks.AsNoTracking()
+            
+            // Lấy tất cả images cho từng restaurant
+            var allImages = await _db.ImageLinks.AsNoTracking()
                 .Include(l => l.Image)
                 .Where(l => l.TargetType == ImageOwner.Restaurant && ids.Contains(l.TargetId))
                 .OrderBy(l => l.TargetId).ThenByDescending(l => l.IsCover).ThenBy(l => l.Position).ThenBy(l => l.Id)
-                .Select(l => new { l.TargetId, l.Image.Url })
+                .Select(l => new { 
+                    l.TargetId, 
+                    LinkId = l.Id,
+                    MediaId = l.ImageId,
+                    l.IsCover,
+                    l.Position,
+                    l.Image.Url,
+                    l.Image.AltText,
+                    l.Image.Caption
+                })
                 .ToListAsync();
 
+            // Group images by restaurant
+            var imagesByRestaurant = allImages.GroupBy(img => img.TargetId)
+                .ToDictionary(g => g.Key, g => g.ToList());
+
             var firstLinkUrlByRestaurant = new Dictionary<long, string>();
-            foreach (var link in orderedLinks)
+            foreach (var link in allImages)
                 if (!firstLinkUrlByRestaurant.ContainsKey(link.TargetId))
                     firstLinkUrlByRestaurant[link.TargetId] = link.Url;
 
+            // Lấy Category objects
+            var categoryIds = pageItems.Where(x => x.CategoryId.HasValue).Select(x => x.CategoryId!.Value).Distinct().ToArray();
+            var categories = categoryIds.Length == 0
+                ? new Dictionary<long, object>()
+                : await _db.Categories.AsNoTracking()
+                    .Where(c => categoryIds.Contains(c.Id))
+                    .Select(c => new { c.Id, c.Name, c.Slug })
+                    .ToDictionaryAsync(x => x.Id, x => (object)x);
+
+            // Lấy CoverImage objects
+            var coverImageIds = pageItems.Where(x => x.CoverImageId.HasValue).Select(x => x.CoverImageId!.Value).Distinct().ToArray();
+            var coverImages = coverImageIds.Length == 0
+                ? new Dictionary<long, object>()
+                : await _db.Images.AsNoTracking()
+                    .Where(img => coverImageIds.Contains(img.Id))
+                    .Select(img => new { img.Id, img.Url, img.AltText, img.Caption })
+                    .ToDictionaryAsync(x => x.Id, x => (object)x);
+
             var items = pageItems.Select(r =>
             {
-                string? coverUrl = (r.CoverImageId.HasValue && coverUrlMap.TryGetValue(r.CoverImageId.Value, out var cu)) ? cu : null;
-                string? thumb = coverUrl ?? (firstLinkUrlByRestaurant.TryGetValue(r.Id, out var fb) ? fb : null);
+                var category = r.CategoryId.HasValue && categories.TryGetValue(r.CategoryId.Value, out var cat) ? cat : null;
+                var coverImage = r.CoverImageId.HasValue && coverImages.TryGetValue(r.CoverImageId.Value, out var cov) ? cov : null;
+
+                // Lấy images cho restaurant này
+                var restaurantImages = imagesByRestaurant.TryGetValue(r.Id, out var imgs) ? imgs.Cast<object>().ToList() : new List<object>();
 
                 return new {
                     r.Id, r.Name, r.Slug, r.Summary, r.Content,
                     r.Address, r.Phone, r.Website, r.PriceRangeText,
-                    r.CoverImageId, ThumbnailUrl = thumb,
-                    r.CategoryId, r.IsPublished, r.CreatedAt, r.UpdatedAt
+                    Category = category,
+                    CoverImage = coverImage,
+                    r.IsPublished, r.CreatedAt, r.UpdatedAt,
+                    Images = restaurantImages
                 };
             });
 
@@ -107,10 +145,28 @@ namespace PromoteSeaTourism.Controllers
                 })
                 .ToListAsync();
 
+            // Lấy Category object
+            var category = r.CategoryId.HasValue 
+                ? await _db.Categories.AsNoTracking()
+                    .Where(c => c.Id == r.CategoryId.Value)
+                    .Select(c => new { c.Id, c.Name, c.Slug })
+                    .FirstOrDefaultAsync()
+                : null;
+
+            // Lấy CoverImage object
+            var coverImage = r.CoverImageId.HasValue
+                ? await _db.Images.AsNoTracking()
+                    .Where(img => img.Id == r.CoverImageId.Value)
+                    .Select(img => new { img.Id, img.Url, img.AltText, img.Caption })
+                    .FirstOrDefaultAsync()
+                : null;
+
             var data = new {
                 r.Id, r.Name, r.Slug, r.Summary, r.Content,
                 r.Address, r.Phone, r.Website, r.PriceRangeText,
-                r.CoverImageId, r.CategoryId, r.IsPublished, r.CreatedAt, r.UpdatedAt,
+                r.IsPublished, r.CreatedAt, r.UpdatedAt,
+                Category = category,
+                CoverImage = coverImage,
                 Images = gallery
             };
 

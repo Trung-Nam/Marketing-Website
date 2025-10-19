@@ -42,34 +42,57 @@ namespace PromoteSeaTourism.Controllers
 
             var ids = pageItems.Select(x => x.Id).ToArray();
 
-            // Lấy link ảnh theo thứ tự: IsCover DESC -> Position ASC -> Id ASC
-            var orderedLinks = await _db.ImageLinks.AsNoTracking()
+            // Lấy tất cả images cho từng tour
+            var allImages = await _db.ImageLinks.AsNoTracking()
                 .Include(l => l.Image)
                 .Where(l => l.TargetType == ImageOwner.Tour && ids.Contains(l.TargetId))
                 .OrderBy(l => l.TargetId)
                 .ThenByDescending(l => l.IsCover)
                 .ThenBy(l => l.Position)
                 .ThenBy(l => l.Id)
-                .Select(l => new { l.TargetId, l.Image.Url })
+                .Select(l => new { 
+                    l.TargetId, 
+                    LinkId = l.Id,
+                    MediaId = l.ImageId,
+                    l.IsCover,
+                    l.Position,
+                    l.Image.Url,
+                    l.Image.AltText,
+                    l.Image.Caption
+                })
                 .ToListAsync();
 
-            var firstLinkUrlByTour = new Dictionary<long, string>();
-            foreach (var link in orderedLinks)
-                if (!firstLinkUrlByTour.ContainsKey(link.TargetId))
-                    firstLinkUrlByTour[link.TargetId] = link.Url;
+            // Group images by tour
+            var imagesByTour = allImages.GroupBy(img => img.TargetId)
+                .ToDictionary(g => g.Key, g => g.ToList());
 
-            var items = pageItems.Select(t => new
+            // Lấy Category objects
+            var categoryIds = pageItems.Where(x => x.CategoryId > 0).Select(x => x.CategoryId).Distinct().ToArray();
+            var categories = categoryIds.Length == 0
+                ? new Dictionary<long, object>()
+                : await _db.Categories.AsNoTracking()
+                    .Where(c => categoryIds.Contains(c.Id))
+                    .Select(c => new { c.Id, c.Name, c.Slug })
+                    .ToDictionaryAsync(x => x.Id, x => (object)x);
+
+            var items = pageItems.Select(t => 
             {
-                t.Id,
-                t.Name,
-                t.Slug,
-                t.Summary,
-                t.Description,
-                t.PriceFrom,
-                t.Itinerary,
-                t.CategoryId,
-                t.CreatedAt,
-                ThumbnailUrl = firstLinkUrlByTour.TryGetValue(t.Id, out var fb) ? fb : null
+                var category = t.CategoryId > 0 && categories.TryGetValue(t.CategoryId, out var cat) ? cat : null;
+                var tourImages = imagesByTour.TryGetValue(t.Id, out var imgs) ? imgs.Cast<object>().ToList() : new List<object>();
+
+                return new
+                {
+                    t.Id,
+                    t.Name,
+                    t.Slug,
+                    t.Summary,
+                    t.Description,
+                    t.PriceFrom,
+                    t.Itinerary,
+                    Category = category,
+                    t.CreatedAt,
+                    Images = tourImages
+                };
             });
 
             return Ok(new PagedResponse<object>(200, "Success", total, page, pageSize, items));
@@ -103,6 +126,14 @@ namespace PromoteSeaTourism.Controllers
                 })
                 .ToListAsync();
 
+            // Lấy Category object
+            var category = t.CategoryId > 0 
+                ? await _db.Categories.AsNoTracking()
+                    .Where(c => c.Id == t.CategoryId)
+                    .Select(c => new { c.Id, c.Name, c.Slug })
+                    .FirstOrDefaultAsync()
+                : null;
+
             var data = new
             {
                 t.Id,
@@ -112,7 +143,7 @@ namespace PromoteSeaTourism.Controllers
                 t.Description,
                 t.PriceFrom,
                 t.Itinerary,
-                t.CategoryId,
+                Category = category,
                 t.CreatedAt,
                 Images = gallery
             };

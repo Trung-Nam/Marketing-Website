@@ -8,13 +8,21 @@ import type {
 
 export const tourService = {
   // Get list of tours with pagination
-  getTours: async (
-    page: number = 1,
-    pageSize: number = 20
-  ): Promise<ToursResponse> => {
-    const response = await api.get(
-      `/tours/list?page=${page}&pageSize=${pageSize}`
-    );
+  getTours: async (params?: {
+    page?: number;
+    pageSize?: number;
+    search?: string;
+    categoryId?: number;
+  }): Promise<ToursResponse> => {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append("page", params.page.toString());
+    if (params?.pageSize)
+      queryParams.append("pageSize", params.pageSize.toString());
+    if (params?.search) queryParams.append("search", params.search);
+    if (params?.categoryId)
+      queryParams.append("categoryId", params.categoryId.toString());
+
+    const response = await api.get(`/tours/list?${queryParams.toString()}`);
     return response.data;
   },
 

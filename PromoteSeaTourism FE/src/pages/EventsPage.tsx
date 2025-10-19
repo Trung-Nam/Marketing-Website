@@ -58,9 +58,8 @@ const EventsPage: React.FC = () => {
     }
   };
 
-  const getCategoryName = (categoryId: number): string => {
-    const category = categories.find((cat) => cat.id === categoryId);
-    return category?.name || "Khác";
+  const getCategoryName = (event: Event): string => {
+    return event.category?.name || "Khác";
   };
 
   const getAvailableCategories = (): Category[] => {
@@ -299,7 +298,7 @@ const EventsPage: React.FC = () => {
                       {/* Category Badge */}
                       <div className="absolute top-4 right-4">
                         <span className="px-3 py-1 bg-white/90 text-gray-800 text-sm font-medium rounded-full">
-                          {getCategoryName(event.categoryId)}
+                          {getCategoryName(event)}
                         </span>
                       </div>
                     </div>

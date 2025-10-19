@@ -14,6 +14,17 @@ export interface Event {
   thumbnailUrl?: string;
   coverImageId?: number;
   images: EventImage[];
+  category?: {
+    id: number;
+    name: string;
+    slug: string;
+  };
+  coverImage?: {
+    id: number;
+    url: string;
+    altText: string;
+    caption: string;
+  };
 }
 
 export interface EventListResponse {
@@ -46,6 +57,7 @@ export interface EventDetail {
   category: {
     id: number;
     name: string;
+    slug: string;
   };
   place: {
     id: number;
@@ -57,6 +69,12 @@ export interface EventDetail {
   thumbnailUrl?: string;
   coverImageId?: number;
   images?: EventImage[];
+  coverImage?: {
+    id: number;
+    url: string;
+    altText: string;
+    caption: string;
+  };
 }
 
 export interface EventImage {

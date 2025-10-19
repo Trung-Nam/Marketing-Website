@@ -14,6 +14,18 @@ export interface Restaurant {
   isPublished: boolean;
   createdAt: string;
   updatedAt: string | null;
+  images?: RestaurantImage[];
+  category?: {
+    id: number;
+    name: string;
+    slug: string;
+  };
+  coverImage?: {
+    id: number;
+    url: string;
+    altText: string;
+    caption: string;
+  };
 }
 
 export interface RestaurantListResponse {
@@ -48,11 +60,18 @@ export interface RestaurantDetail {
   category?: {
     id: number;
     name: string;
+    slug: string;
   };
   isPublished: boolean;
   createdAt: string;
   updatedAt: string | null;
   images?: RestaurantImage[];
+  coverImage?: {
+    id: number;
+    url: string;
+    altText: string;
+    caption: string;
+  };
 }
 
 export interface RestaurantImage {

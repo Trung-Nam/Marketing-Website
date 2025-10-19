@@ -6,6 +6,7 @@ import type { Restaurant, RestaurantDetail } from "../types/restaurant";
 import type { Category } from "../types/category";
 import Modal from "./Modal";
 import LoadingSpinner from "./LoadingSpinner";
+import { getRestaurantCoverImageInfo } from "../utils/restaurantUtils";
 
 interface ViewRestaurantModalProps {
   isOpen: boolean;
@@ -229,11 +230,40 @@ export default function ViewRestaurantModal({
               </div>
             )}
 
+            {/* Cover Image */}
+            {(() => {
+              const coverInfo = getRestaurantCoverImageInfo(restaurantDetail);
+              return coverInfo.url ? (
+                <div className="p-4 bg-white/5 rounded-lg border border-white/10">
+                  <h3 className="text-lg font-semibold text-white mb-3">
+                    Ảnh bìa chính
+                  </h3>
+                  <div className="relative">
+                    <img
+                      src={coverInfo.url}
+                      alt={coverInfo.alt}
+                      loading="lazy"
+                      className="w-full h-64 object-cover rounded-lg"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src =
+                          "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 24 24'%3E%3Cpath fill='%23ccc' d='M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z'/%3E%3C/svg%3E";
+                      }}
+                    />
+                    {coverInfo.caption && (
+                      <p className="text-white/80 text-sm mt-2">
+                        {coverInfo.caption}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ) : null;
+            })()}
+
             {/* Images */}
             {restaurantDetail.images && restaurantDetail.images.length > 0 && (
               <div className="p-4 bg-white/5 rounded-lg border border-white/10">
                 <h3 className="text-lg font-semibold text-white mb-3">
-                  Hình ảnh
+                  Hình ảnh khác
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {restaurantDetail.images.map((image, index) => (

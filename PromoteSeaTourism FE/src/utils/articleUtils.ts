@@ -2,15 +2,20 @@ import type { Article, ArticleDetail } from "../types/article";
 
 /**
  * Get cover image URL for an article
- * Priority: thumbnailUrl -> coverImageId match -> isCover flag -> first image -> default
+ * Priority: coverImage.url -> thumbnailUrl -> coverImageId match -> isCover flag -> first image -> default
  */
 export const getCoverImageUrl = (article: Article | ArticleDetail): string => {
-  // First priority: use thumbnailUrl if available
+  // First priority: use coverImage.url if available
+  if (article.coverImage?.url) {
+    return article.coverImage.url;
+  }
+
+  // Second priority: use thumbnailUrl if available
   if (article.thumbnailUrl) {
     return article.thumbnailUrl;
   }
 
-  // Second priority: try to find cover image from images array
+  // Third priority: try to find cover image from images array
   if (article.images && article.images.length > 0) {
     const coverImage =
       article.images.find((img) => img.mediaId === article.coverImageId) ||
@@ -35,7 +40,16 @@ export const getCoverImageInfo = (
   alt: string;
   caption?: string;
 } => {
-  // First priority: use thumbnailUrl if available
+  // First priority: use coverImage object if available
+  if (article.coverImage?.url) {
+    return {
+      url: article.coverImage.url,
+      alt: article.coverImage.altText || article.title,
+      caption: article.coverImage.caption,
+    };
+  }
+
+  // Second priority: use thumbnailUrl if available
   if (article.thumbnailUrl) {
     return {
       url: article.thumbnailUrl,
@@ -44,7 +58,7 @@ export const getCoverImageInfo = (
     };
   }
 
-  // Second priority: try to find cover image from images array
+  // Third priority: try to find cover image from images array
   if (article.images && article.images.length > 0) {
     const coverImage =
       article.images.find((img) => img.mediaId === article.coverImageId) ||

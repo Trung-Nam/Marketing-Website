@@ -12,6 +12,17 @@ export interface Article {
   createdAt: string;
   updatedAt: string | null;
   images?: ArticleImageLink[];
+  category?: {
+    id: number;
+    name: string;
+    slug: string;
+  };
+  coverImage?: {
+    id: number;
+    url: string;
+    altText: string;
+    caption: string;
+  };
 }
 
 export interface ArticlesResponse {

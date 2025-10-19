@@ -19,7 +19,9 @@ const EventDetail = () => import("../pages/EventDetail");
 const PlacesPage = () => import("../pages/PlacesPage");
 const PlaceDetail = () => import("../pages/PlaceDetail");
 const RestaurantsPage = () => import("../pages/RestaurantsPage");
+const RestaurantDetail = () => import("../pages/RestaurantDetail");
 const ToursPage = () => import("../pages/ToursPage");
+const TourDetail = () => import("../pages/TourDetail");
 
 export const router = createBrowserRouter([
   {
@@ -108,9 +110,23 @@ export const router = createBrowserRouter([
         },
       },
       {
+        path: "restaurants/:id",
+        async lazy() {
+          const mod = await RestaurantDetail();
+          return { Component: mod.default };
+        },
+      },
+      {
         path: "tours",
         async lazy() {
           const mod = await ToursPage();
+          return { Component: mod.default };
+        },
+      },
+      {
+        path: "tours/:id",
+        async lazy() {
+          const mod = await TourDetail();
           return { Component: mod.default };
         },
       },

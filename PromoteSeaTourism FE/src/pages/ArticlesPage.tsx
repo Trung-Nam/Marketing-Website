@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { articleService } from "../services/articleService";
-import { categoryService } from "../services/categoryService";
 import type { Article } from "../types/article";
-import type { Category } from "../types/category";
 import LoadingSpinner from "../components/LoadingSpinner";
 import Pagination from "../components/Pagination";
 import { getCoverImageUrl } from "../utils/articleUtils";
@@ -17,13 +15,11 @@ const ArticlesPage: React.FC = () => {
   const [totalItems, setTotalItems] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [categories, setCategories] = useState<Category[]>([]);
 
   const pageSize = 9;
 
   useEffect(() => {
     loadArticles();
-    loadCategories();
   }, []);
 
   useEffect(() => {
@@ -46,33 +42,21 @@ const ArticlesPage: React.FC = () => {
     }
   };
 
-  const loadCategories = async () => {
-    try {
-      const response = await categoryService.getCategories({
-        page: 1,
-        pageSize: 100,
-      });
-      setCategories(response.data);
-    } catch (error) {
-      console.error("Error loading categories:", error);
-    }
+  const getCategoryName = (article: Article): string => {
+    return article.category?.name || "Khác";
   };
 
-  const getCategoryName = (categoryId: number): string => {
-    const category = categories.find((cat) => cat.id === categoryId);
-    return category?.name || "Khác";
-  };
+  const getAvailableCategories = () => {
+    // Get unique categories from articles (using category object from API)
+    const usedCategories = allArticles
+      .filter((article) => article.category) // Only articles with category object
+      .map((article) => article.category!)
+      .filter(
+        (category, index, self) =>
+          index === self.findIndex((c) => c.id === category.id)
+      ); // Remove duplicates
 
-  const getAvailableCategories = (): Category[] => {
-    // Get unique category IDs from articles
-    const usedCategoryIds = [
-      ...new Set(allArticles.map((article) => article.categoryId)),
-    ];
-
-    // Return only categories that have articles
-    return categories.filter((category) =>
-      usedCategoryIds.includes(category.id)
-    );
+    return usedCategories;
   };
 
   const filterArticles = () => {
@@ -90,7 +74,7 @@ const ArticlesPage: React.FC = () => {
     // Filter by category
     if (selectedCategory !== "all") {
       filtered = filtered.filter(
-        (article) => article.categoryId === parseInt(selectedCategory)
+        (article) => article.category?.id === parseInt(selectedCategory)
       );
     }
 
@@ -218,7 +202,7 @@ const ArticlesPage: React.FC = () => {
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
                     <div className="absolute top-4 left-4">
                       <span className="px-3 py-1 bg-white/90 text-gray-800 text-sm font-medium rounded-full">
-                        {getCategoryName(article.categoryId)}
+                        {getCategoryName(article)}
                       </span>
                     </div>
                   </div>

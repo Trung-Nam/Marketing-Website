@@ -82,16 +82,29 @@ namespace PromoteSeaTourism.Controllers
                     firstLinkUrlByArticle[link.TargetId] = link.Url;
             }
 
-            // 3) Build kết quả: thumbnailUrl = coverUrl (nếu có) hoặc fallbackUrl
+            // 3) Lấy Category objects
+            var categoryIds = pageItems.Where(x => x.CategoryId.HasValue).Select(x => x.CategoryId!.Value).Distinct().ToArray();
+            var categories = categoryIds.Length == 0
+                ? new Dictionary<long, object>()
+                : await _db.Categories.AsNoTracking()
+                    .Where(c => categoryIds.Contains(c.Id))
+                    .Select(c => new { c.Id, c.Name, c.Slug })
+                    .ToDictionaryAsync(x => x.Id, x => (object)x);
+
+            // 4) Lấy CoverImage objects
+            var coverImageIds = pageItems.Where(x => x.CoverImageId.HasValue).Select(x => x.CoverImageId!.Value).Distinct().ToArray();
+            var coverImages = coverImageIds.Length == 0
+                ? new Dictionary<long, object>()
+                : await _db.Images.AsNoTracking()
+                    .Where(img => coverImageIds.Contains(img.Id))
+                    .Select(img => new { img.Id, img.Url, img.AltText, img.Caption })
+                    .ToDictionaryAsync(x => x.Id, x => (object)x);
+
+            // 5) Build kết quả với objects
             var items = pageItems.Select(a =>
             {
-                string? coverUrl = null;
-                if (a.CoverImageId.HasValue && coverUrlMap.TryGetValue(a.CoverImageId.Value, out var cu))
-                    coverUrl = cu;
-
-                string? thumb = coverUrl;
-                if (thumb == null && firstLinkUrlByArticle.TryGetValue(a.Id, out var fb))
-                    thumb = fb;
+                var category = a.CategoryId.HasValue && categories.TryGetValue(a.CategoryId.Value, out var cat) ? cat : null;
+                var coverImage = a.CoverImageId.HasValue && coverImages.TryGetValue(a.CoverImageId.Value, out var cov) ? cov : null;
 
                 return new
                 {
@@ -100,9 +113,8 @@ namespace PromoteSeaTourism.Controllers
                     a.Slug,
                     a.Summary,
                     a.Content,
-                    a.CoverImageId,
-                    ThumbnailUrl = thumb,   // thumbnail kèm theo
-                    a.CategoryId,
+                    Category = category,
+                    CoverImage = coverImage,
                     a.IsPublished,
                     a.PublishedAt,
                     a.CreatedAt,
@@ -144,34 +156,28 @@ namespace PromoteSeaTourism.Controllers
                 })
                 .ToListAsync();
 
-            // Tính ThumbnailUrl giống như List API
-            string? thumbnailUrl = null;
-            
-            // Ưu tiên CoverImageId
-            if (a.CoverImageId.HasValue)
-            {
-                var coverImage = await _db.Images.AsNoTracking()
-                    .FirstOrDefaultAsync(img => img.Id == a.CoverImageId.Value);
-                if (coverImage != null)
-                    thumbnailUrl = coverImage.Url;
-            }
-            
-            // Fallback: lấy ảnh đầu tiên trong gallery
-            if (thumbnailUrl == null && gallery.Count > 0)
-            {
-                var firstImage = gallery.OrderByDescending(img => img.IsCover)
-                                       .ThenBy(img => img.Position)
-                                       .FirstOrDefault();
-                if (firstImage != null)
-                    thumbnailUrl = firstImage.Url;
-            }
+            // Lấy Category object
+            var category = a.CategoryId.HasValue 
+                ? await _db.Categories.AsNoTracking()
+                    .Where(c => c.Id == a.CategoryId.Value)
+                    .Select(c => new { c.Id, c.Name, c.Slug })
+                    .FirstOrDefaultAsync()
+                : null;
+
+            // Lấy CoverImage object
+            var coverImage = a.CoverImageId.HasValue
+                ? await _db.Images.AsNoTracking()
+                    .Where(img => img.Id == a.CoverImageId.Value)
+                    .Select(img => new { img.Id, img.Url, img.AltText, img.Caption })
+                    .FirstOrDefaultAsync()
+                : null;
 
             var data = new
             {
                 a.Id, a.Title, a.Slug, a.Summary, a.Content,
-                a.CategoryId, a.IsPublished, a.PublishedAt, a.CreatedAt, a.UpdatedAt,
-                CoverImageId = a.CoverImageId,
-                ThumbnailUrl = thumbnailUrl,  // Thêm ThumbnailUrl
+                a.IsPublished, a.PublishedAt, a.CreatedAt, a.UpdatedAt,
+                Category = category,
+                CoverImage = coverImage,
                 Images = gallery
             };
 

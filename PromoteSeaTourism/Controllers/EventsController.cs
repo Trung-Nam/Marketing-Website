@@ -76,11 +76,38 @@ namespace PromoteSeaTourism.Controllers
                 if (!thumbByEvent.ContainsKey(g.TargetId))
                     thumbByEvent[g.TargetId] = g.Url;
 
+            // Lấy Category objects
+            var categoryIds = pageItems.Where(x => x.CategoryId.HasValue).Select(x => x.CategoryId!.Value).Distinct().ToArray();
+            var categories = categoryIds.Length == 0
+                ? new Dictionary<long, object>()
+                : await _db.Categories.AsNoTracking()
+                    .Where(c => categoryIds.Contains(c.Id))
+                    .Select(c => new { c.Id, c.Name, c.Slug })
+                    .ToDictionaryAsync(x => x.Id, x => (object)x);
+
+            // Lấy Place objects
+            var placeIds = pageItems.Where(x => x.PlaceId.HasValue).Select(x => x.PlaceId!.Value).Distinct().ToArray();
+            var places = placeIds.Length == 0
+                ? new Dictionary<long, object>()
+                : await _db.Places.AsNoTracking()
+                    .Where(p => placeIds.Contains(p.Id))
+                    .Select(p => new { p.Id, p.Name, p.Slug })
+                    .ToDictionaryAsync(x => x.Id, x => (object)x);
+
+            // Lấy CoverImage objects
+            var coverImageIds = pageItems.Where(x => x.CoverImageId.HasValue).Select(x => x.CoverImageId!.Value).Distinct().ToArray();
+            var coverImages = coverImageIds.Length == 0
+                ? new Dictionary<long, object>()
+                : await _db.Images.AsNoTracking()
+                    .Where(img => coverImageIds.Contains(img.Id))
+                    .Select(img => new { img.Id, img.Url, img.AltText, img.Caption })
+                    .ToDictionaryAsync(x => x.Id, x => (object)x);
+
             var items = pageItems.Select(e =>
             {
-                string? thumb = (e.CoverImageId.HasValue && coverMap.TryGetValue(e.CoverImageId.Value, out var u))
-                    ? u
-                    : (thumbByEvent.TryGetValue(e.Id, out var f) ? f : null);
+                var category = e.CategoryId.HasValue && categories.TryGetValue(e.CategoryId.Value, out var cat) ? cat : null;
+                var place = e.PlaceId.HasValue && places.TryGetValue(e.PlaceId.Value, out var pl) ? pl : null;
+                var coverImage = e.CoverImageId.HasValue && coverImages.TryGetValue(e.CoverImageId.Value, out var cov) ? cov : null;
 
                 return new
                 {
@@ -92,11 +119,11 @@ namespace PromoteSeaTourism.Controllers
                     e.EndTime,
                     e.Address,
                     e.PriceInfo,
-                    e.CategoryId,
-                    e.PlaceId,
+                    Category = category,
+                    Place = place,
+                    CoverImage = coverImage,
                     e.IsPublished,
-                    e.CreatedAt,
-                    ThumbnailUrl = thumb
+                    e.CreatedAt
                 };
             });
 
@@ -134,27 +161,13 @@ namespace PromoteSeaTourism.Controllers
                 })
                 .ToListAsync();
 
-            // Tính ThumbnailUrl giống như List API
-            string? thumbnailUrl = null;
-            
-            // Ưu tiên CoverImageId
-            if (e.CoverImageId.HasValue)
-            {
-                var coverImage = await _db.Images.AsNoTracking()
-                    .FirstOrDefaultAsync(img => img.Id == e.CoverImageId.Value);
-                if (coverImage != null)
-                    thumbnailUrl = coverImage.Url;
-            }
-            
-            // Fallback: lấy ảnh đầu tiên trong gallery
-            if (thumbnailUrl == null && gallery.Count > 0)
-            {
-                var firstImage = gallery.OrderByDescending(img => img.IsCover)
-                                       .ThenBy(img => img.Position)
-                                       .FirstOrDefault();
-                if (firstImage != null)
-                    thumbnailUrl = firstImage.Url;
-            }
+            // Lấy CoverImage object
+            var coverImage = e.CoverImageId.HasValue
+                ? await _db.Images.AsNoTracking()
+                    .Where(img => img.Id == e.CoverImageId.Value)
+                    .Select(img => new { img.Id, img.Url, img.AltText, img.Caption })
+                    .FirstOrDefaultAsync()
+                : null;
 
             var data = new
             {
@@ -167,12 +180,9 @@ namespace PromoteSeaTourism.Controllers
                 e.EndTime,
                 e.Address,
                 e.PriceInfo,
-                e.CategoryId,
-                e.PlaceId,
-                e.CoverImageId,
-                ThumbnailUrl = thumbnailUrl,  // Thêm ThumbnailUrl
-                Category = e.Category == null ? null : new { e.Category.Id, e.Category.Name },
-                Place = e.Place == null ? null : new { e.Place.Id, e.Place.Name },
+                Category = e.Category == null ? null : new { e.Category.Id, e.Category.Name, e.Category.Slug },
+                Place = e.Place == null ? null : new { e.Place.Id, e.Place.Name, e.Place.Slug },
+                CoverImage = coverImage,
                 e.IsPublished,
                 e.CreatedAt,
                 e.UpdatedAt,
