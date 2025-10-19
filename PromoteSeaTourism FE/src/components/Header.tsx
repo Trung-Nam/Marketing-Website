@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useAuthStore } from "../store/useAuthStore";
 import LoginModal from "./LoginModal";
 import RegisterModal from "./RegisterModal";
@@ -242,6 +242,16 @@ export default function Header() {
                         >
                           Hồ sơ
                         </button>
+                        <Link
+                          to="/favorites"
+                          className={`block w-full text-left px-4 py-2 text-sm transition-colors cursor-pointer ${
+                            isActive("/favorites")
+                              ? "text-ocean-600 bg-ocean-50"
+                              : "text-gray-700 hover:bg-gray-50"
+                          }`}
+                        >
+                          Yêu thích
+                        </Link>
                         <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer">
                           Cài đặt
                         </button>
@@ -453,6 +463,16 @@ export default function Header() {
                       >
                         Hồ sơ
                       </button>
+                      <Link
+                        to="/favorites"
+                        className={`block w-full text-left px-3 py-2 transition-colors font-medium cursor-pointer ${
+                          isActive("/favorites")
+                            ? "text-ocean-600 bg-ocean-50 border-l-4 border-ocean-600"
+                            : "text-gray-700 hover:text-ocean-600 hover:bg-gray-50"
+                        }`}
+                      >
+                        Yêu thích
+                      </Link>
                       <button className="block w-full text-left px-3 py-2 text-gray-700 hover:text-ocean-600 transition-colors font-medium cursor-pointer">
                         Cài đặt
                       </button>

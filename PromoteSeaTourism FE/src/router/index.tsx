@@ -22,6 +22,7 @@ const RestaurantsPage = () => import("../pages/RestaurantsPage");
 const RestaurantDetail = () => import("../pages/RestaurantDetail");
 const ToursPage = () => import("../pages/ToursPage");
 const TourDetail = () => import("../pages/TourDetail");
+const FavoritesPage = () => import("../pages/FavoritesPage");
 
 export const router = createBrowserRouter([
   {
@@ -153,6 +154,13 @@ export const router = createBrowserRouter([
             },
           },
         ],
+      },
+      {
+        path: "favorites",
+        async lazy() {
+          const mod = await FavoritesPage();
+          return { Component: mod.default };
+        },
       },
     ],
   },

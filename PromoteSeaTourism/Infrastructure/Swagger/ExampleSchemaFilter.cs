@@ -425,6 +425,17 @@ namespace PromoteSeaTourism.Infrastructure.Swagger
                 };
                 return;
             }
+
+            // === FAVORITE DTOs ===
+            if (t == typeof(UpsertFavoriteDto))
+            {
+                schema.Example = new OpenApiObject
+                {
+                    ["targetType"] = new OpenApiString("Article"),
+                    ["targetId"] = new OpenApiLong(1)
+                };
+                return;
+            }
         }
     }
 }

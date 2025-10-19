@@ -6,7 +6,7 @@ namespace PromoteSeaTourism.Models
     // ========== ENUMS ==========
     public enum UserRole { User, Editor, Admin }
     public enum CategoryScope { Article, Tour, Place, Event, Accommodation, Restaurant }
-    public enum ContentTarget { Article, Tour, Place, Event, Accommodation, Restaurant }
+    public enum ContentTarget { Category, Article, Event, Restaurant, Accommodation, Place, Tour }
     public enum ImageOwner { Article, Restaurant, Accommodation, Review, Tour, Event }
 
     // ========== USER ==========

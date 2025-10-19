@@ -1,12 +1,41 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ImageCarousel from "../components/ImageCarousel";
 import VideoSection from "../components/VideoSection";
 import LoginModal from "../components/LoginModal";
 import RegisterModal from "../components/RegisterModal";
+import ItemCarousel from "../components/ItemCarousel";
+import ItemGrid from "../components/ItemGrid";
+import { articleService } from "../services/articleService";
+import { eventService } from "../services/eventService";
+import { tourService } from "../services/tourService";
+import { accommodationService } from "../services/accommodationService";
+import { placeService } from "../services/placeService";
+import { restaurantService } from "../services/restaurantService";
+import { getCoverImageUrl } from "../utils/articleUtils";
+import { getEventCoverImageUrl } from "../utils/eventUtils";
+import { getTourCoverImageUrl } from "../utils/tourUtils";
+import { getRestaurantCoverImageUrl } from "../utils/restaurantUtils";
+
+interface HomeItem {
+  id: number;
+  title: string;
+  summary?: string;
+  imageUrl: string;
+  type: "article" | "event" | "tour" | "accommodation" | "place" | "restaurant";
+  createdAt?: string;
+  address?: string;
+}
 
 export default function Home() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
+  const [articles, setArticles] = useState<HomeItem[]>([]);
+  const [events, setEvents] = useState<HomeItem[]>([]);
+  const [tours, setTours] = useState<HomeItem[]>([]);
+  const [accommodations, setAccommodations] = useState<HomeItem[]>([]);
+  const [places, setPlaces] = useState<HomeItem[]>([]);
+  const [restaurants, setRestaurants] = useState<HomeItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const openLoginModal = () => {
     setIsLoginModalOpen(true);
@@ -22,6 +51,133 @@ export default function Home() {
     setIsLoginModalOpen(false);
     setIsRegisterModalOpen(false);
   };
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        console.log("Loading home data...");
+
+        // Load articles
+        console.log("Loading articles...");
+        const articlesResponse = await articleService.getArticles({
+          page: 1,
+          pageSize: 6,
+        });
+        console.log("Articles response:", articlesResponse);
+        const articlesData = articlesResponse.data.map((article) => ({
+          id: article.id,
+          title: article.title,
+          summary: article.summary,
+          imageUrl: getCoverImageUrl(article),
+          type: "article" as const,
+          createdAt: article.createdAt,
+        }));
+        console.log("Articles data:", articlesData);
+        setArticles(articlesData);
+
+        // Load events
+        console.log("Loading events...");
+        const eventsResponse = await eventService.getEvents({
+          page: 1,
+          pageSize: 6,
+        });
+        console.log("Events response:", eventsResponse);
+        const eventsData = eventsResponse.data.map((event) => ({
+          id: event.id,
+          title: event.title,
+          summary: event.summary,
+          imageUrl: getEventCoverImageUrl(event),
+          type: "event" as const,
+          createdAt: event.createdAt,
+        }));
+        console.log("Events data:", eventsData);
+        setEvents(eventsData);
+
+        // Load tours
+        console.log("Loading tours...");
+        const toursResponse = await tourService.getTours({
+          page: 1,
+          pageSize: 6,
+        });
+        console.log("Tours response:", toursResponse);
+        const toursData = toursResponse.data.map((tour) => ({
+          id: tour.id,
+          title: tour.name,
+          summary: tour.summary,
+          imageUrl: getTourCoverImageUrl(tour),
+          type: "tour" as const,
+          createdAt: tour.createdAt,
+        }));
+        console.log("Tours data:", toursData);
+        setTours(toursData);
+
+        // Load accommodations
+        console.log("Loading accommodations...");
+        const accommodationsResponse =
+          await accommodationService.getAccommodations({
+            page: 1,
+            pageSize: 6,
+          });
+        console.log("Accommodations response:", accommodationsResponse);
+        const accommodationsData = accommodationsResponse.data.map(
+          (accommodation) => ({
+            id: accommodation.id,
+            title: accommodation.name,
+            summary: accommodation.summary,
+            imageUrl: accommodation.thumbnailUrl || "/default-avatar.svg",
+            type: "accommodation" as const,
+            createdAt: accommodation.createdAt,
+          })
+        );
+        console.log("Accommodations data:", accommodationsData);
+        setAccommodations(accommodationsData);
+
+        // Load places
+        console.log("Loading places...");
+        const placesResponse = await placeService.getPlaces({
+          page: 1,
+          pageSize: 6,
+        });
+        console.log("Places response:", placesResponse);
+        const placesData = placesResponse.data.map((place) => ({
+          id: place.id,
+          title: place.name,
+          summary: place.summary,
+          imageUrl: place.thumbnailUrl || "/default-avatar.svg",
+          type: "place" as const,
+          createdAt: place.createdAt,
+        }));
+        console.log("Places data:", placesData);
+        setPlaces(placesData);
+
+        // Load restaurants
+        console.log("Loading restaurants...");
+        const restaurantsResponse = await restaurantService.getRestaurants({
+          page: 1,
+          pageSize: 6,
+        });
+        console.log("Restaurants response:", restaurantsResponse);
+        const restaurantsData = restaurantsResponse.data.map((restaurant) => ({
+          id: restaurant.id,
+          title: restaurant.name,
+          summary: restaurant.summary,
+          imageUrl: getRestaurantCoverImageUrl(restaurant),
+          type: "restaurant" as const,
+          createdAt: restaurant.createdAt,
+        }));
+        console.log("Restaurants data:", restaurantsData);
+        setRestaurants(restaurantsData);
+      } catch (error) {
+        console.error("Error loading home data:", error);
+        console.error("Error details:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
 
   // Sample images for carousel
   const carouselImages = [
@@ -130,6 +286,79 @@ export default function Home() {
 
       {/* Video Section */}
       <VideoSection />
+
+      {/* Featured Content Section */}
+      {!loading && (
+        <section className="py-16 bg-gradient-to-br from-gray-50 to-blue-50">
+          <div className="max-w-7xl mx-auto px-4">
+            <div className="text-center mb-12">
+              <h2 className="text-4xl font-bold text-gray-900 mb-4">
+                Khám phá Biển Ba Động
+              </h2>
+              <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+                Tìm hiểu về những trải nghiệm tuyệt vời, sự kiện hấp dẫn và tour
+                du lịch đặc biệt tại Biển Ba Động
+              </p>
+            </div>
+
+            <div className="space-y-12">
+              {/* Articles Section - Carousel */}
+              {articles.length > 0 && (
+                <ItemCarousel
+                  items={articles}
+                  title="Bài viết nổi bật"
+                  type="article"
+                />
+              )}
+
+              {/* Events Section - Grid */}
+              {events.length > 0 && (
+                <ItemGrid items={events} title="Sự kiện sắp tới" type="event" />
+              )}
+
+              {/* Tours Section - Carousel */}
+              {tours.length > 0 && (
+                <ItemCarousel items={tours} title="Tour du lịch" type="tour" />
+              )}
+
+              {/* Accommodations Section - Grid */}
+              {accommodations.length > 0 && (
+                <ItemGrid
+                  items={accommodations}
+                  title="Nơi nghỉ"
+                  type="accommodation"
+                />
+              )}
+
+              {/* Places Section - Carousel */}
+              {places.length > 0 && (
+                <ItemCarousel items={places} title="Địa điểm" type="place" />
+              )}
+
+              {/* Restaurants Section - Grid */}
+              {restaurants.length > 0 && (
+                <ItemGrid
+                  items={restaurants}
+                  title="Nhà hàng"
+                  type="restaurant"
+                />
+              )}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Loading State */}
+      {loading && (
+        <section className="py-16 bg-gradient-to-br from-gray-50 to-blue-50">
+          <div className="max-w-7xl mx-auto px-4">
+            <div className="text-center">
+              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-ocean-600"></div>
+              <p className="mt-4 text-gray-600">Đang tải nội dung...</p>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Features Section */}
       <section

@@ -1,29 +1,28 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { tourService } from "../services/tourService";
-import { TourDetail } from "../types/tour";
+import type { TourDetail as TourDetailType } from "../types/tour";
 import LoadingSpinner from "../components/LoadingSpinner";
+import FavoriteButton from "../components/FavoriteButton";
 import { getTourCoverImageInfo, getOtherTourImages } from "../utils/tourUtils";
 
-const TourDetailPage: React.FC = () => {
+const TourDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [tour, setTour] = useState<TourDetail | null>(null);
+  const [tour, setTour] = useState<TourDetailType | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(
-    null
-  );
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
   useEffect(() => {
     if (id) {
-      loadTourDetail();
+      loadTourDetail(parseInt(id));
     }
   }, [id]);
 
-  const loadTourDetail = async () => {
+  const loadTourDetail = async (tourId: number) => {
     try {
       setLoading(true);
-      const response = await tourService.getTourById(parseInt(id!));
+      const response = await tourService.getTourById(tourId);
       setTour(response);
     } catch (error) {
       console.error("Error loading tour detail:", error);
@@ -47,33 +46,9 @@ const TourDetailPage: React.FC = () => {
     });
   };
 
-  const openLightbox = (index: number) => {
-    setSelectedImageIndex(index);
-  };
-
-  const closeLightbox = () => {
-    setSelectedImageIndex(null);
-  };
-
-  const nextImage = () => {
-    if (tour && selectedImageIndex !== null) {
-      const totalImages = tour.images?.length || 0;
-      setSelectedImageIndex((selectedImageIndex + 1) % totalImages);
-    }
-  };
-
-  const prevImage = () => {
-    if (tour && selectedImageIndex !== null) {
-      const totalImages = tour.images?.length || 0;
-      setSelectedImageIndex(
-        selectedImageIndex === 0 ? totalImages - 1 : selectedImageIndex - 1
-      );
-    }
-  };
-
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <LoadingSpinner />
       </div>
     );
@@ -81,7 +56,7 @@ const TourDetailPage: React.FC = () => {
 
   if (!tour) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">
             Không tìm thấy tour
@@ -141,16 +116,13 @@ const TourDetailPage: React.FC = () => {
                 </svg>
                 Chia sẻ
               </button>
-              <button className="flex items-center gap-2 px-4 py-2 bg-ocean-600 text-white rounded-lg hover:bg-ocean-700 transition-colors">
-                <svg
-                  className="w-4 h-4"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-                </svg>
-                Yêu thích
-              </button>
+              {tour && (
+                <FavoriteButton
+                  targetType={6} // Tour
+                  targetId={tour.id}
+                  className="!bg-ocean-600 !text-white hover:!bg-ocean-700"
+                />
+              )}
             </div>
           </div>
         </div>
@@ -160,93 +132,92 @@ const TourDetailPage: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 space-y-8">
             {/* Cover Image */}
-            {coverInfo.url && (
-              <div className="mb-8">
-                <div className="relative rounded-2xl overflow-hidden shadow-lg">
-                  <img
-                    src={coverInfo.url}
-                    alt={coverInfo.alt}
-                    loading="lazy"
-                    className="w-full h-96 object-cover cursor-pointer"
-                    onClick={() => openLightbox(0)}
-                  />
+            <div className="relative">
+              <img
+                src={coverInfo.url}
+                alt={coverInfo.alt}
+                className="w-full h-96 object-cover rounded-2xl shadow-lg"
+                loading="lazy"
+              />
+              {coverInfo.caption && (
+                <div className="absolute bottom-4 left-4 right-4 bg-black/50 text-white p-3 rounded-lg">
+                  <p className="text-sm">{coverInfo.caption}</p>
                 </div>
-                {coverInfo.caption && (
-                  <p className="text-center text-sm text-gray-500 mt-2">
-                    {coverInfo.caption}
-                  </p>
-                )}
+              )}
+            </div>
+
+            {/* Category */}
+            {tour.category && (
+              <div className="flex items-center gap-2">
+                <span className="px-3 py-1 bg-ocean-100 text-ocean-800 text-sm font-medium rounded-full">
+                  {tour.category.name}
+                </span>
               </div>
             )}
 
-            {/* Main Info */}
-            <div className="mb-8">
-              {/* Category and Date */}
-              <div className="flex items-center gap-3 mb-4">
-                {tour.category && (
-                  <span className="px-3 py-1 bg-ocean-50 text-ocean-700 text-sm font-medium rounded-full">
-                    {tour.category.name}
-                  </span>
-                )}
-                <span className="text-sm text-gray-500">
-                  {formatDate(tour.createdAt)} • Tour
-                </span>
+            {/* Title */}
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
+              {tour.name}
+            </h1>
+
+            {/* Summary */}
+            {tour.summary && (
+              <div className="bg-blue-50 p-6 rounded-2xl">
+                <h2 className="text-xl font-semibold text-gray-900 mb-3">
+                  Tổng quan
+                </h2>
+                <p className="text-gray-700 leading-relaxed">{tour.summary}</p>
               </div>
+            )}
 
-              {/* Title */}
-              <h1 className="text-3xl font-bold text-gray-900 mb-4">
-                {tour.name}
-              </h1>
-
-              {/* Summary */}
-              <p className="text-lg text-gray-700 mb-6">{tour.summary}</p>
-
-              {/* Description */}
+            {/* Description */}
+            {tour.description && (
               <div className="prose prose-lg max-w-none">
-                <p className="text-gray-700 leading-relaxed whitespace-pre-line">
-                  {tour.description}
-                </p>
+                <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+                  Mô tả chi tiết
+                </h2>
+                <div
+                  className="text-gray-700 leading-relaxed"
+                  dangerouslySetInnerHTML={{ __html: tour.description }}
+                />
               </div>
-            </div>
+            )}
 
             {/* Itinerary */}
             {tour.itinerary && (
-              <div className="mb-8">
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                  Lịch trình chi tiết
+              <div className="bg-gray-50 p-6 rounded-2xl">
+                <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+                  Lịch trình
                 </h2>
-                <div className="bg-gray-50 rounded-2xl p-6">
-                  <div className="prose prose-lg max-w-none">
-                    <p className="text-gray-700 leading-relaxed whitespace-pre-line">
-                      {tour.itinerary}
-                    </p>
-                  </div>
-                </div>
+                <div
+                  className="text-gray-700 leading-relaxed"
+                  dangerouslySetInnerHTML={{ __html: tour.itinerary }}
+                />
               </div>
             )}
 
             {/* Other Images */}
             {otherImages.length > 0 && (
-              <div className="mb-8">
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                  Hình ảnh
+              <div>
+                <h2 className="text-2xl font-semibold text-gray-900 mb-6">
+                  Hình ảnh khác
                 </h2>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {otherImages.map((image, index) => (
                     <div
-                      key={image.linkId}
-                      className="relative rounded-lg overflow-hidden shadow-md cursor-pointer group"
-                      onClick={() => openLightbox(index + 1)}
+                      key={index}
+                      className="relative group cursor-pointer"
+                      onClick={() => setLightboxImage(image.url)}
                     >
                       <img
                         src={image.url}
-                        alt={image.altText}
+                        alt={image.altText || `Tour image ${index + 1}`}
+                        className="w-full h-48 object-cover rounded-lg shadow-md group-hover:shadow-xl transition-shadow duration-300"
                         loading="lazy"
-                        className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
                       />
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center">
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 rounded-lg flex items-center justify-center">
                         <svg
                           className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                           fill="none"
@@ -270,58 +241,65 @@ const TourDetailPage: React.FC = () => {
 
           {/* Sidebar */}
           <div className="lg:col-span-1">
-            <div className="sticky top-8">
-              {/* Tour Info */}
-              <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-                <h3 className="text-xl font-bold text-gray-900 mb-6">
-                  Thông tin tour
-                </h3>
-                <div className="space-y-4">
-                  {tour.category && (
-                    <div>
-                      <span className="text-sm text-gray-500">Danh mục</span>
-                      <div className="mt-1">
-                        <span className="px-3 py-1 bg-ocean-50 text-ocean-700 text-sm font-medium rounded-full">
-                          {tour.category.name}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-
-                  <div>
-                    <span className="text-sm text-gray-500">Khoảng giá</span>
-                    <div className="mt-1">
-                      <span className="text-lg font-bold text-gray-900">
-                        {formatPrice(tour.priceFrom)}
-                      </span>
-                    </div>
+            <div className="sticky top-8 space-y-6">
+              {/* Booking Card */}
+              <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-lg">
+                <div className="text-center mb-6">
+                  <div className="text-3xl font-bold text-ocean-600 mb-2">
+                    {formatPrice(tour.priceFrom)}
                   </div>
+                  <div className="text-gray-600">Giá cho mỗi người</div>
+                </div>
 
-                  <div>
-                    <span className="text-sm text-gray-500">Ngày tạo</span>
-                    <div className="mt-1">
-                      <span className="text-gray-900">
-                        {formatDate(tour.createdAt)}
-                      </span>
-                    </div>
-                  </div>
+                <button className="w-full bg-ocean-600 text-white py-4 rounded-lg font-semibold hover:bg-ocean-700 transition-colors mb-4">
+                  Đặt tour ngay
+                </button>
 
-                  <div>
-                    <span className="text-sm text-gray-500">Trạng thái</span>
-                    <div className="mt-1">
-                      <span className="px-3 py-1 bg-green-50 text-green-700 text-sm font-medium rounded-full">
-                        Đã xuất bản
-                      </span>
-                    </div>
-                  </div>
+                <div className="text-center text-sm text-gray-500">
+                  Miễn phí hủy trong 24h
                 </div>
               </div>
 
-              {/* Booking Card */}
-              <div className="bg-white rounded-2xl shadow-lg p-6">
-                <button className="w-full bg-ocean-600 hover:bg-ocean-700 text-white font-bold py-4 px-6 rounded-lg transition-colors">
-                  Đặt tour
-                </button>
+              {/* Tour Information */}
+              <div className="bg-gray-50 rounded-2xl p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  Thông tin tour
+                </h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Giá:</span>
+                    <span className="font-semibold text-gray-900">
+                      {formatPrice(tour.priceFrom)}
+                    </span>
+                  </div>
+
+                  {tour.category && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Loại:</span>
+                      <span className="font-semibold text-gray-900">
+                        {tour.category.name}
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Ngày tạo:</span>
+                    <span className="font-semibold text-gray-900">
+                      {formatDate(tour.createdAt)}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Trạng thái:</span>
+                    <span
+                      className={`font-semibold ${
+                        tour.isPublished ? "text-green-600" : "text-gray-600"
+                      }`}
+                    >
+                      {tour.isPublished ? "Đang hoạt động" : "Tạm dừng"}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -329,94 +307,40 @@ const TourDetailPage: React.FC = () => {
       </div>
 
       {/* Lightbox */}
-      {selectedImageIndex !== null && tour.images && (
-        <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
-          <button
-            onClick={closeLightbox}
-            className="absolute top-4 right-4 text-white hover:text-gray-300 z-10"
-          >
-            <svg
-              className="w-8 h-8"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
-
-          {tour.images.length > 1 && (
-            <>
-              <button
-                onClick={prevImage}
-                className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white hover:text-gray-300 z-10"
-              >
-                <svg
-                  className="w-8 h-8"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15 19l-7-7 7-7"
-                  />
-                </svg>
-              </button>
-              <button
-                onClick={nextImage}
-                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-white hover:text-gray-300 z-10"
-              >
-                <svg
-                  className="w-8 h-8"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 5l7 7-7 7"
-                  />
-                </svg>
-              </button>
-            </>
-          )}
-
-          <div className="max-w-4xl max-h-full">
+      {lightboxImage && (
+        <div
+          className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
+          onClick={() => setLightboxImage(null)}
+        >
+          <div className="relative max-w-4xl max-h-full">
             <img
-              src={tour.images[selectedImageIndex].url}
-              alt={tour.images[selectedImageIndex].altText}
-              className="max-w-full max-h-full object-contain"
+              src={lightboxImage}
+              alt="Lightbox"
+              className="max-w-full max-h-full object-contain rounded-lg"
             />
-            {tour.images[selectedImageIndex].caption && (
-              <div className="text-center mt-4">
-                <p className="text-white">
-                  {tour.images[selectedImageIndex].caption}
-                </p>
-              </div>
-            )}
+            <button
+              onClick={() => setLightboxImage(null)}
+              className="absolute top-4 right-4 bg-black/50 text-white p-2 rounded-full hover:bg-black/70 transition-colors"
+            >
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
           </div>
-
-          {tour.images.length > 1 && (
-            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white">
-              <span>
-                {selectedImageIndex + 1} / {tour.images.length}
-              </span>
-            </div>
-          )}
         </div>
       )}
     </div>
   );
 };
 
-export default TourDetailPage;
+export default TourDetail;

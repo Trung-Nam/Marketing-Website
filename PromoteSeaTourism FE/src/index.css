@@ -161,6 +161,53 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
+
+  /* Slick Carousel Custom Styles */
+  .slick-dots {
+    bottom: -50px !important;
+  }
+
+  .slick-dots li button:before {
+    font-size: 12px !important;
+    color: #0284c7 !important;
+  }
+
+  .slick-dots li.slick-active button:before {
+    color: #0284c7 !important;
+  }
+
+  .slick-prev,
+  .slick-next {
+    z-index: 10;
+    width: 40px !important;
+    height: 40px !important;
+  }
+
+  .slick-prev:before,
+  .slick-next:before {
+    font-size: 24px !important;
+    color: #0284c7 !important;
+  }
+
+  .slick-prev {
+    left: -50px !important;
+  }
+
+  .slick-next {
+    right: -50px !important;
+  }
+
+  .carousel-container {
+    position: relative;
+  }
+
+  .carousel-container .slick-slide {
+    padding: 0 8px;
+  }
+
+  .carousel-container .slick-list {
+    margin: 0 -8px;
+  }
 }
 
 @keyframes floating {
