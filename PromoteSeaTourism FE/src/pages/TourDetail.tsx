@@ -107,15 +107,20 @@ const TourDetailPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             {/* Breadcrumb */}
-            <div className="flex items-center gap-2 text-sm text-gray-500">
+            <div className="text-gray-500">
+              <button
+                onClick={() => navigate(-1)}
+                className="hover:text-ocean-600 cursor-pointer"
+              >
+                ← Quay lại
+              </button>
+              <span className="mx-2">/</span>
               <button
                 onClick={() => navigate("/tours")}
-                className="hover:text-gray-700 transition-colors"
+                className="hover:text-ocean-600 cursor-pointer"
               >
                 Tours
               </button>
-              <span>/</span>
-              <span className="text-gray-900">{tour.name}</span>
             </div>
 
             {/* Action Buttons */}
