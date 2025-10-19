@@ -126,6 +126,13 @@ export default function EditTourModal({
           isCover: false,
         })) || [],
     }));
+    // Reset all existing images to not be cover
+    setExistingImages((prev) =>
+      prev.map((img) => ({
+        ...img,
+        isCover: false,
+      }))
+    );
   };
 
   const removeExistingImage = (imageId: number) => {
@@ -163,6 +170,18 @@ export default function EditTourModal({
         isCover: i === index,
       }))
     );
+    // Reset all existing images to not be cover
+    setExistingImages((prev) =>
+      prev.map((img) => ({
+        ...img,
+        isCover: false,
+      }))
+    );
+    // Reset coverImageId to 0 since we're using a new image
+    setFormData((prev) => ({
+      ...prev,
+      coverImageId: 0,
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

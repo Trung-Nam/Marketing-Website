@@ -277,7 +277,11 @@ const EventsPage: React.FC = () => {
                     {/* Event Image */}
                     <div className="relative h-48 overflow-hidden">
                       <img
-                        src={event.thumbnailUrl || "/default-avatar.svg"}
+                        src={
+                          event.images && event.images.length > 0
+                            ? event.images[0].url
+                            : "/default-avatar.svg"
+                        }
                         alt={event.title}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                       />

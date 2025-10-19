@@ -338,7 +338,6 @@ using (var scope = app.Services.CreateScope())
             BestSeason = "3–8",
             TicketInfo = null,
             OpeningHours = null,
-            CoverImageId = imageIdByUrl[p.CoverUrl],
             CategoryId = CatId(p.CatSlug),
             IsPublished = true,
             CreatedAt = DateTime.UtcNow
@@ -375,7 +374,6 @@ using (var scope = app.Services.CreateScope())
             Phone = null,
             Website = null,
             PriceRangeText = r.Price,
-            CoverImageId = imageIdByUrl[r.CoverUrl],
             CategoryId = CatId(r.CatSlug),
             IsPublished = true,
             CreatedAt = DateTime.UtcNow
@@ -414,7 +412,6 @@ using (var scope = app.Services.CreateScope())
             Star = a.Star,
             MinPrice = a.Min,
             MaxPrice = a.Max,
-            CoverImageId = imageIdByUrl[a.CoverUrl],
             CategoryId = CatId(a.CatSlug),
             IsPublished = true,
             CreatedAt = DateTime.UtcNow
@@ -455,7 +452,6 @@ using (var scope = app.Services.CreateScope())
             StartTime = ev.Start,
             EndTime = ev.End,
             PriceInfo = "Miễn phí",
-            CoverImageId = imageIdByUrl[ev.CoverUrl],
             CategoryId = CatId(ev.CatSlug),
             IsPublished = true,
             CreatedAt = DateTime.UtcNow
@@ -613,7 +609,6 @@ using (var scope = app.Services.CreateScope())
                 Slug = a.Slug,
                 Summary = a.Summary,
                 Content = a.Content,
-                CoverImageId = imageIdByUrl[a.CoverUrl],
                 CategoryId = CatId(a.CatSlug),
                 IsPublished = a.IsPublished,
                 PublishedAt = a.PublishedAt,
@@ -708,6 +703,314 @@ using (var scope = app.Services.CreateScope())
 
     Log("Seeded Articles + galleries, Reviews, Favorites.");
 
+    // ---------- CREATE IMAGE LINKS & SET COVER IMAGES ----------
+    // Tạo ImageLinks cho Places
+    foreach (var p in placesSeed)
+    {
+        var place = db.Places.FirstOrDefault(x => x.Slug == p.Slug);
+        if (place != null && imageIdByUrl.ContainsKey(p.CoverUrl))
+        {
+            var imageId = imageIdByUrl[p.CoverUrl];
+            
+            // Kiểm tra xem ImageLink đã tồn tại chưa
+            var existingLink = db.ImageLinks.FirstOrDefault(l => 
+                l.TargetType == ImageOwner.Place && 
+                l.TargetId == place.Id && 
+                l.ImageId == imageId);
+            
+            if (existingLink == null)
+            {
+                // Tạo ImageLink mới
+                db.ImageLinks.Add(new ImageLink
+                {
+                    ImageId = imageId,
+                    TargetType = ImageOwner.Place,
+                    TargetId = place.Id,
+                    Position = 0,
+                    IsCover = false,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+        }
+    }
+    
+    // Set IsCover cho Places (chỉ 1 ảnh cover cho mỗi place)
+    foreach (var p in placesSeed)
+    {
+        var place = db.Places.FirstOrDefault(x => x.Slug == p.Slug);
+        if (place != null && imageIdByUrl.ContainsKey(p.CoverUrl))
+        {
+            var imageId = imageIdByUrl[p.CoverUrl];
+            
+            // Set IsCover = false cho tất cả ảnh của place này
+            var placeImages = db.ImageLinks
+                .Where(l => l.TargetType == ImageOwner.Place && l.TargetId == place.Id)
+                .ToList();
+            
+            foreach (var link in placeImages)
+            {
+                var image = db.Images.FirstOrDefault(x => x.Id == link.ImageId);
+                if (image != null)
+                {
+                    image.IsCover = false;
+                }
+            }
+            
+            // Set IsCover = true cho ảnh cover
+            var coverImage = db.Images.FirstOrDefault(x => x.Id == imageId);
+            if (coverImage != null)
+            {
+                coverImage.IsCover = true;
+            }
+        }
+    }
+
+    // Tạo ImageLinks cho Restaurants
+    foreach (var r in restaurantsSeed)
+    {
+        var restaurant = db.Restaurants.FirstOrDefault(x => x.Slug == r.Slug);
+        if (restaurant != null && imageIdByUrl.ContainsKey(r.CoverUrl))
+        {
+            var imageId = imageIdByUrl[r.CoverUrl];
+            
+            // Kiểm tra xem ImageLink đã tồn tại chưa
+            var existingLink = db.ImageLinks.FirstOrDefault(l => 
+                l.TargetType == ImageOwner.Restaurant && 
+                l.TargetId == restaurant.Id && 
+                l.ImageId == imageId);
+            
+            if (existingLink == null)
+            {
+                // Tạo ImageLink mới
+                db.ImageLinks.Add(new ImageLink
+                {
+                    ImageId = imageId,
+                    TargetType = ImageOwner.Restaurant,
+                    TargetId = restaurant.Id,
+                    Position = 0,
+                    IsCover = false,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+        }
+    }
+    
+    // Set IsCover cho Restaurants (chỉ 1 ảnh cover cho mỗi restaurant)
+    foreach (var r in restaurantsSeed)
+    {
+        var restaurant = db.Restaurants.FirstOrDefault(x => x.Slug == r.Slug);
+        if (restaurant != null && imageIdByUrl.ContainsKey(r.CoverUrl))
+        {
+            var imageId = imageIdByUrl[r.CoverUrl];
+            
+            // Set IsCover = false cho tất cả ảnh của restaurant này
+            var restaurantImages = db.ImageLinks
+                .Where(l => l.TargetType == ImageOwner.Restaurant && l.TargetId == restaurant.Id)
+                .ToList();
+            
+            foreach (var link in restaurantImages)
+            {
+                var image = db.Images.FirstOrDefault(x => x.Id == link.ImageId);
+                if (image != null)
+                {
+                    image.IsCover = false;
+                }
+            }
+            
+            // Set IsCover = true cho ảnh cover
+            var coverImage = db.Images.FirstOrDefault(x => x.Id == imageId);
+            if (coverImage != null)
+            {
+                coverImage.IsCover = true;
+            }
+        }
+    }
+
+    // Tạo ImageLinks cho Accommodations
+    foreach (var a in accSeed)
+    {
+        var accommodation = db.Accommodations.FirstOrDefault(x => x.Slug == a.Slug);
+        if (accommodation != null && imageIdByUrl.ContainsKey(a.CoverUrl))
+        {
+            var imageId = imageIdByUrl[a.CoverUrl];
+            
+            // Kiểm tra xem ImageLink đã tồn tại chưa
+            var existingLink = db.ImageLinks.FirstOrDefault(l => 
+                l.TargetType == ImageOwner.Accommodation && 
+                l.TargetId == accommodation.Id && 
+                l.ImageId == imageId);
+            
+            if (existingLink == null)
+            {
+                // Tạo ImageLink mới
+                db.ImageLinks.Add(new ImageLink
+                {
+                    ImageId = imageId,
+                    TargetType = ImageOwner.Accommodation,
+                    TargetId = accommodation.Id,
+                    Position = 0,
+                    IsCover = false,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+        }
+    }
+    
+    // Set IsCover cho Accommodations (chỉ 1 ảnh cover cho mỗi accommodation)
+    foreach (var a in accSeed)
+    {
+        var accommodation = db.Accommodations.FirstOrDefault(x => x.Slug == a.Slug);
+        if (accommodation != null && imageIdByUrl.ContainsKey(a.CoverUrl))
+        {
+            var imageId = imageIdByUrl[a.CoverUrl];
+            
+            // Set IsCover = false cho tất cả ảnh của accommodation này
+            var accommodationImages = db.ImageLinks
+                .Where(l => l.TargetType == ImageOwner.Accommodation && l.TargetId == accommodation.Id)
+                .ToList();
+            
+            foreach (var link in accommodationImages)
+            {
+                var image = db.Images.FirstOrDefault(x => x.Id == link.ImageId);
+                if (image != null)
+                {
+                    image.IsCover = false;
+                }
+            }
+            
+            // Set IsCover = true cho ảnh cover
+            var coverImage = db.Images.FirstOrDefault(x => x.Id == imageId);
+            if (coverImage != null)
+            {
+                coverImage.IsCover = true;
+            }
+        }
+    }
+
+    // Tạo ImageLinks cho Events
+    foreach (var ev in eventsSeed)
+    {
+        var eventEntity = db.Events.FirstOrDefault(x => x.Slug == ev.Slug);
+        if (eventEntity != null && imageIdByUrl.ContainsKey(ev.CoverUrl))
+        {
+            var imageId = imageIdByUrl[ev.CoverUrl];
+            
+            // Kiểm tra xem ImageLink đã tồn tại chưa
+            var existingLink = db.ImageLinks.FirstOrDefault(l => 
+                l.TargetType == ImageOwner.Event && 
+                l.TargetId == eventEntity.Id && 
+                l.ImageId == imageId);
+            
+            if (existingLink == null)
+            {
+                // Tạo ImageLink mới
+                db.ImageLinks.Add(new ImageLink
+                {
+                    ImageId = imageId,
+                    TargetType = ImageOwner.Event,
+                    TargetId = eventEntity.Id,
+                    Position = 0,
+                    IsCover = false,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+        }
+    }
+    
+    // Set IsCover cho Events (chỉ 1 ảnh cover cho mỗi event)
+    foreach (var ev in eventsSeed)
+    {
+        var eventEntity = db.Events.FirstOrDefault(x => x.Slug == ev.Slug);
+        if (eventEntity != null && imageIdByUrl.ContainsKey(ev.CoverUrl))
+        {
+            var imageId = imageIdByUrl[ev.CoverUrl];
+            
+            // Set IsCover = false cho tất cả ảnh của event này
+            var eventImages = db.ImageLinks
+                .Where(l => l.TargetType == ImageOwner.Event && l.TargetId == eventEntity.Id)
+                .ToList();
+            
+            foreach (var link in eventImages)
+            {
+                var image = db.Images.FirstOrDefault(x => x.Id == link.ImageId);
+                if (image != null)
+                {
+                    image.IsCover = false;
+                }
+            }
+            
+            // Set IsCover = true cho ảnh cover
+            var coverImage = db.Images.FirstOrDefault(x => x.Id == imageId);
+            if (coverImage != null)
+            {
+                coverImage.IsCover = true;
+            }
+        }
+    }
+
+    // Tạo ImageLinks cho Articles
+    foreach (var a in articlesSeed)
+    {
+        var article = db.Articles.FirstOrDefault(x => x.Slug == a.Slug);
+        if (article != null && imageIdByUrl.ContainsKey(a.CoverUrl))
+        {
+            var imageId = imageIdByUrl[a.CoverUrl];
+            
+            // Kiểm tra xem ImageLink đã tồn tại chưa
+            var existingLink = db.ImageLinks.FirstOrDefault(l => 
+                l.TargetType == ImageOwner.Article && 
+                l.TargetId == article.Id && 
+                l.ImageId == imageId);
+            
+            if (existingLink == null)
+            {
+                // Tạo ImageLink mới
+                db.ImageLinks.Add(new ImageLink
+                {
+                    ImageId = imageId,
+                    TargetType = ImageOwner.Article,
+                    TargetId = article.Id,
+                    Position = 0,
+                    IsCover = false,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+        }
+    }
+    
+    // Set IsCover cho Articles (chỉ 1 ảnh cover cho mỗi article)
+    foreach (var a in articlesSeed)
+    {
+        var article = db.Articles.FirstOrDefault(x => x.Slug == a.Slug);
+        if (article != null && imageIdByUrl.ContainsKey(a.CoverUrl))
+        {
+            var imageId = imageIdByUrl[a.CoverUrl];
+            
+            // Set IsCover = false cho tất cả ảnh của article này
+            var articleImages = db.ImageLinks
+                .Where(l => l.TargetType == ImageOwner.Article && l.TargetId == article.Id)
+                .ToList();
+            
+            foreach (var link in articleImages)
+            {
+                var image = db.Images.FirstOrDefault(x => x.Id == link.ImageId);
+                if (image != null)
+                {
+                    image.IsCover = false;
+                }
+            }
+            
+            // Set IsCover = true cho ảnh cover
+            var coverImage = db.Images.FirstOrDefault(x => x.Id == imageId);
+            if (coverImage != null)
+            {
+                coverImage.IsCover = true;
+            }
+        }
+    }
+
+    db.SaveChanges();
+    Log("Created ImageLinks and set IsCover on Images.");
 
 }
 

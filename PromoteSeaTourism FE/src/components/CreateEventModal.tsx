@@ -148,9 +148,15 @@ export default function CreateEventModal({
         ...newImage,
         position: formData.images.length,
       };
+
+      // If new image is set as cover, reset all existing images to not be cover
+      const updatedImages = newImage.isCover
+        ? formData.images.map((img) => ({ ...img, isCover: false }))
+        : formData.images;
+
       setFormData({
         ...formData,
-        images: [...formData.images, imageToAdd],
+        images: [...updatedImages, imageToAdd],
       });
       setNewImage({
         url: "",
@@ -169,15 +175,24 @@ export default function CreateEventModal({
     });
   };
 
-  const setCoverImage = (index: number) => {
-    setFormData({
-      ...formData,
-      images: formData.images.map((img, i) => ({
+  const setCoverImage = useCallback((index: number) => {
+    setFormData((prev) => {
+      console.log("Setting cover image at index:", index);
+      console.log("Current images before:", prev.images);
+
+      const updatedImages = prev.images.map((img, i) => ({
         ...img,
         isCover: i === index,
-      })),
+      }));
+
+      console.log("Updated images:", updatedImages);
+
+      return {
+        ...prev,
+        images: updatedImages,
+      };
     });
-  };
+  }, []);
 
   // Load data when modal opens
   useEffect(() => {

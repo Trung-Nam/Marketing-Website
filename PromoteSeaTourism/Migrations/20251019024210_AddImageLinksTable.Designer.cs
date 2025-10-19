@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PromoteSeaTourism.Data;
 
@@ -11,9 +12,11 @@ using PromoteSeaTourism.Data;
 namespace PromoteSeaTourism.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251019024210_AddImageLinksTable")]
+    partial class AddImageLinksTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -307,8 +310,8 @@ namespace PromoteSeaTourism.Migrations
                         .HasColumnType("varchar(255)");
 
                     b.Property<string>("Caption")
-                        .HasMaxLength(500)
-                        .HasColumnType("varchar(500)");
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)");
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
@@ -318,24 +321,14 @@ namespace PromoteSeaTourism.Migrations
                     b.Property<long?>("CreatedBy")
                         .HasColumnType("bigint");
 
-                    b.Property<bool>("IsCover")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("tinyint(1)")
-                        .HasDefaultValue(false);
-
                     b.Property<string>("Url")
                         .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("varchar(500)");
-
-                    b.Property<long?>("UserId")
-                        .HasColumnType("bigint");
+                        .HasMaxLength(1000)
+                        .HasColumnType("varchar(1000)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("CreatedBy");
-
-                    b.HasIndex("UserId");
 
                     b.ToTable("images", (string)null);
                 });
@@ -767,13 +760,9 @@ namespace PromoteSeaTourism.Migrations
             modelBuilder.Entity("PromoteSeaTourism.Models.Image", b =>
                 {
                     b.HasOne("PromoteSeaTourism.Models.User", "CreatedByUser")
-                        .WithMany()
+                        .WithMany("MediaCreated")
                         .HasForeignKey("CreatedBy")
                         .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("PromoteSeaTourism.Models.User", null)
-                        .WithMany("MediaCreated")
-                        .HasForeignKey("UserId");
 
                     b.Navigation("CreatedByUser");
                 });

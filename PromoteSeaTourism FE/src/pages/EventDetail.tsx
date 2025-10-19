@@ -41,13 +41,12 @@ export default function EventDetailPage() {
           // Fallback if no images
           setImages([
             {
-              linkId: 1,
-              mediaId: 1,
-              isCover: true,
-              position: 0,
+              id: 1,
               url: "/default-avatar.svg",
               altText: eventData?.title || "Sự kiện",
               caption: "Ảnh chính của sự kiện",
+              isCover: true,
+              position: 0,
             },
           ]);
         }
@@ -68,6 +67,10 @@ export default function EventDetailPage() {
 
   const closeLightbox = () => {
     setLightboxImage(null);
+  };
+
+  const getCategoryName = (): string => {
+    return event?.category?.name || "Khác";
   };
 
   const formatDate = (dateString: string) => {
@@ -149,7 +152,6 @@ export default function EventDetailPage() {
 
   const coverImage = images.find((img) => img.isCover) || images[0];
   const featuredImages = images.filter((img) => !img.isCover);
-  const eventStatus = getEventStatus(event.startTime, event.endTime);
 
   return (
     <div className="min-h-screen bg-white">
@@ -189,7 +191,7 @@ export default function EventDetailPage() {
             {/* Category Badge and Metadata */}
             <div className="flex items-center gap-4 mb-6">
               <span className="px-3 py-1 bg-white/20 text-white text-sm font-medium rounded-full">
-                {event.category?.name || "Khác"}
+                {getCategoryName()}
               </span>
               <span className="text-white/80">•</span>
               <span className="text-white/80">
@@ -288,7 +290,7 @@ export default function EventDetailPage() {
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {featuredImages.map((image) => (
                     <button
-                      key={image.linkId}
+                      key={image.id}
                       onClick={() =>
                         openLightbox(
                           image.url,
@@ -338,7 +340,7 @@ export default function EventDetailPage() {
                 <div>
                   <h4 className="font-semibold text-gray-900 mb-2">Danh mục</h4>
                   <span className="inline-block px-3 py-1 bg-ocean-100 text-ocean-800 rounded-full text-sm font-medium">
-                    {event.category?.name || "Khác"}
+                    {getCategoryName()}
                   </span>
                 </div>
 
@@ -349,10 +351,12 @@ export default function EventDetailPage() {
                   </h4>
                   <span
                     className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(
-                      eventStatus
+                      getEventStatus(event.startTime, event.endTime)
                     )}`}
                   >
-                    {getStatusText(eventStatus)}
+                    {getStatusText(
+                      getEventStatus(event.startTime, event.endTime)
+                    )}
                   </span>
                 </div>
 

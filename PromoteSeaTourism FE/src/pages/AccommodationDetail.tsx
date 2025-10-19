@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { accommodationService } from "../services/accommodationService";
 import { categoryService } from "../services/categoryService";
 import type {
@@ -12,6 +12,7 @@ import LoadingSpinner from "../components/LoadingSpinner";
 export default function AccommodationDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [accommodation, setAccommodation] =
     useState<AccommodationDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -34,34 +35,76 @@ export default function AccommodationDetailPage() {
           return;
         }
 
-        const [accommodationResponse, categoriesResponse] = await Promise.all([
-          accommodationService.getAccommodationById(parseInt(id)),
-          categoryService.getCategories({ page: 1, pageSize: 100 }),
-        ]);
+        // Check if we have accommodation data from navigation state
+        const stateAccommodation = location.state?.accommodation;
 
-        // API response structure: accommodationResponse has data directly, not accommodationResponse.data
-        const accommodationData =
-          (accommodationResponse as { data?: AccommodationDetail }).data ||
-          accommodationResponse;
-        setAccommodation(accommodationData);
-        setCategories(categoriesResponse.data);
+        if (stateAccommodation) {
+          // Use data from navigation state
+          setAccommodation(stateAccommodation);
 
-        // Set images from API response
-        if (accommodationData?.images && accommodationData.images.length > 0) {
-          setImages(accommodationData.images);
+          // Load categories
+          const categoriesResponse = await categoryService.getCategories({
+            page: 1,
+            pageSize: 100,
+          });
+          setCategories(categoriesResponse.data);
+
+          // Set images from state data
+          if (
+            stateAccommodation.images &&
+            stateAccommodation.images.length > 0
+          ) {
+            setImages(stateAccommodation.images);
+          } else {
+            // Fallback if no images
+            setImages([
+              {
+                linkId: 1,
+                mediaId: 1,
+                isCover: true,
+                position: 0,
+                url: stateAccommodation.thumbnailUrl || "/default-avatar.svg",
+                altText: stateAccommodation.name || "Nơi nghỉ",
+                caption: "Ảnh chính của nơi nghỉ",
+              },
+            ]);
+          }
         } else {
-          // Fallback if no images
-          setImages([
-            {
-              linkId: 1,
-              mediaId: 1,
-              isCover: true,
-              position: 0,
-              url: "/default-avatar.svg",
-              altText: accommodationData?.name || "Nơi nghỉ",
-              caption: "Ảnh chính của nơi nghỉ",
-            },
-          ]);
+          // Fallback to API call if no state data
+          const [accommodationResponse, categoriesResponse] = await Promise.all(
+            [
+              accommodationService.getAccommodationById(parseInt(id)),
+              categoryService.getCategories({ page: 1, pageSize: 100 }),
+            ]
+          );
+
+          // API response structure: accommodationResponse has data directly, not accommodationResponse.data
+          const accommodationData =
+            (accommodationResponse as { data?: AccommodationDetail }).data ||
+            accommodationResponse;
+          setAccommodation(accommodationData);
+          setCategories(categoriesResponse.data);
+
+          // Set images from API response
+          if (
+            accommodationData?.images &&
+            accommodationData.images.length > 0
+          ) {
+            setImages(accommodationData.images);
+          } else {
+            // Fallback if no images
+            setImages([
+              {
+                linkId: 1,
+                mediaId: 1,
+                isCover: true,
+                position: 0,
+                url: "/default-avatar.svg",
+                altText: accommodationData?.name || "Nơi nghỉ",
+                caption: "Ảnh chính của nơi nghỉ",
+              },
+            ]);
+          }
         }
       } catch (error) {
         console.error("Error loading accommodation detail:", error);
@@ -72,7 +115,7 @@ export default function AccommodationDetailPage() {
     };
 
     load();
-  }, [id]);
+  }, [id, location.state]);
 
   const openLightbox = (url: string, alt: string, caption?: string) => {
     setLightboxImage({ url, alt, caption });
@@ -103,17 +146,6 @@ export default function AccommodationDetailPage() {
   const getCategoryName = (categoryId: number): string => {
     const category = categories.find((cat) => cat.id === categoryId);
     return category?.name || "Khác";
-  };
-
-  const getAccommodationType = (type: string) => {
-    const typeMap: { [key: string]: string } = {
-      hotel: "Khách sạn",
-      resort: "Resort",
-      homestay: "Homestay",
-      villa: "Villa",
-      apartment: "Căn hộ",
-    };
-    return typeMap[type] || type;
   };
 
   if (loading) {
@@ -336,15 +368,33 @@ export default function AccommodationDetailPage() {
                   </span>
                 </div>
 
-                {/* Type */}
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-2">
-                    Loại hình
-                  </h4>
-                  <p className="text-gray-700">
-                    {getAccommodationType(accommodation.type)}
-                  </p>
-                </div>
+                {/* Star Rating */}
+                {accommodation.star && (
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-2">
+                      Xếp hạng
+                    </h4>
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: 5 }, (_, i) => (
+                        <svg
+                          key={i}
+                          className={`w-4 h-4 ${
+                            i < accommodation.star!
+                              ? "text-yellow-400"
+                              : "text-gray-300"
+                          }`}
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                      ))}
+                      <span className="text-sm text-gray-600 ml-2">
+                        {accommodation.star} sao
+                      </span>
+                    </div>
+                  </div>
+                )}
 
                 {/* Price */}
                 <div>
@@ -364,13 +414,6 @@ export default function AccommodationDetailPage() {
                 <div>
                   <h4 className="font-semibold text-gray-900 mb-2">Địa chỉ</h4>
                   <p className="text-gray-700">{accommodation.address}</p>
-                  {accommodation.province && (
-                    <p className="text-sm text-gray-500 mt-1">
-                      {accommodation.ward && `${accommodation.ward}, `}
-                      {accommodation.district && `${accommodation.district}, `}
-                      {accommodation.province}
-                    </p>
-                  )}
                 </div>
 
                 {/* Contact Info */}
@@ -380,13 +423,6 @@ export default function AccommodationDetailPage() {
                       Điện thoại
                     </h4>
                     <p className="text-gray-700">{accommodation.phone}</p>
-                  </div>
-                )}
-
-                {accommodation.email && (
-                  <div>
-                    <h4 className="font-semibold text-gray-900 mb-2">Email</h4>
-                    <p className="text-gray-700">{accommodation.email}</p>
                   </div>
                 )}
 
@@ -405,26 +441,6 @@ export default function AccommodationDetailPage() {
                     </a>
                   </div>
                 )}
-
-                {/* Amenities */}
-                {accommodation.amenities &&
-                  accommodation.amenities.length > 0 && (
-                    <div>
-                      <h4 className="font-semibold text-gray-900 mb-2">
-                        Tiện nghi
-                      </h4>
-                      <div className="flex flex-wrap gap-2">
-                        {accommodation.amenities.map((amenity, index) => (
-                          <span
-                            key={index}
-                            className="px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded-full"
-                          >
-                            {amenity}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
 
                 {/* Created Date */}
                 <div>

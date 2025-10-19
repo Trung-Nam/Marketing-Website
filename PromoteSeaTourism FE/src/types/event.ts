@@ -11,7 +11,7 @@ export interface Event {
   placeId: number;
   isPublished: boolean;
   createdAt: string;
-  thumbnailUrl: string;
+  images: EventImage[];
 }
 
 export interface EventListResponse {
@@ -41,29 +41,27 @@ export interface EventDetail {
   endTime: string;
   address: string;
   priceInfo: string;
-  category?: {
+  category: {
     id: number;
     name: string;
   };
-  place?: {
+  place: {
     id: number;
     name: string;
-  } | null;
+  };
   isPublished: boolean;
   createdAt: string;
   updatedAt?: string;
-  thumbnailUrl: string;
   images?: EventImage[];
 }
 
 export interface EventImage {
-  linkId: number;
-  mediaId: number;
+  id: number;
+  url: string;
+  caption: string;
+  altText: string;
   isCover: boolean;
   position: number;
-  url: string;
-  altText: string;
-  caption: string;
 }
 
 export interface CreateEventRequest {

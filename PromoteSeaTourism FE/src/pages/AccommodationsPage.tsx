@@ -249,6 +249,7 @@ const AccommodationsPage: React.FC = () => {
                 <Link
                   key={accommodation.id}
                   to={`/accommodations/${accommodation.id}`}
+                  state={{ accommodation }}
                   className="group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden transform hover:-translate-y-2"
                 >
                   {/* Accommodation Images */}
