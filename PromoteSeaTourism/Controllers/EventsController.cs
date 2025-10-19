@@ -66,7 +66,7 @@ namespace PromoteSeaTourism.Controllers
 
             var galleryMap = await _db.ImageLinks.AsNoTracking()
                 .Include(l => l.Image)
-                .Where(l => l.TargetType == ImageOwner.Article && eventIds.Contains(l.TargetId))
+                .Where(l => l.TargetType == ImageOwner.Event && eventIds.Contains(l.TargetId))
                 .OrderBy(l => l.TargetId).ThenByDescending(l => l.IsCover).ThenBy(l => l.Position)
                 .Select(l => new { l.TargetId, l.Image.Url })
                 .ToListAsync();
@@ -119,12 +119,13 @@ namespace PromoteSeaTourism.Controllers
 
             var gallery = await _db.ImageLinks.AsNoTracking()
                 .Include(l => l.Image)
-                .Where(l => l.TargetType == ImageOwner.Article && l.TargetId == id)
+                .Where(l => l.TargetType == ImageOwner.Event && l.TargetId == id)
                 .OrderByDescending(l => l.IsCover)
                 .ThenBy(l => l.Position)
                 .Select(l => new
                 {
-                    l.Id,
+                    LinkId = l.Id,
+                    MediaId = l.ImageId,
                     l.Image.Url,
                     l.Image.Caption,
                     l.Image.AltText,
@@ -132,6 +133,28 @@ namespace PromoteSeaTourism.Controllers
                     l.Position
                 })
                 .ToListAsync();
+
+            // Tính ThumbnailUrl giống như List API
+            string? thumbnailUrl = null;
+            
+            // Ưu tiên CoverImageId
+            if (e.CoverImageId.HasValue)
+            {
+                var coverImage = await _db.Images.AsNoTracking()
+                    .FirstOrDefaultAsync(img => img.Id == e.CoverImageId.Value);
+                if (coverImage != null)
+                    thumbnailUrl = coverImage.Url;
+            }
+            
+            // Fallback: lấy ảnh đầu tiên trong gallery
+            if (thumbnailUrl == null && gallery.Count > 0)
+            {
+                var firstImage = gallery.OrderByDescending(img => img.IsCover)
+                                       .ThenBy(img => img.Position)
+                                       .FirstOrDefault();
+                if (firstImage != null)
+                    thumbnailUrl = firstImage.Url;
+            }
 
             var data = new
             {
@@ -144,6 +167,10 @@ namespace PromoteSeaTourism.Controllers
                 e.EndTime,
                 e.Address,
                 e.PriceInfo,
+                e.CategoryId,
+                e.PlaceId,
+                e.CoverImageId,
+                ThumbnailUrl = thumbnailUrl,  // Thêm ThumbnailUrl
                 Category = e.Category == null ? null : new { e.Category.Id, e.Category.Name },
                 Place = e.Place == null ? null : new { e.Place.Id, e.Place.Name },
                 e.IsPublished,
@@ -209,7 +236,7 @@ namespace PromoteSeaTourism.Controllers
                         _db.ImageLinks.Add(new ImageLink
                         {
                             ImageId = media[idx].Id,
-                            TargetType = ImageOwner.Article, // giữ nguyên logic hiện tại
+                            TargetType = ImageOwner.Event,
                             TargetId = e.Id,
                             Position = img.Position,
                             IsCover = img.IsCover,
@@ -279,7 +306,7 @@ namespace PromoteSeaTourism.Controllers
                         _db.ImageLinks.Add(new ImageLink
                         {
                             ImageId = m.Id,
-                            TargetType = ImageOwner.Article, // giữ nguyên logic hiện tại
+                            TargetType = ImageOwner.Event,
                             TargetId = e.Id,
                             Position = img.Position,
                             IsCover = img.IsCover,
@@ -293,7 +320,7 @@ namespace PromoteSeaTourism.Controllers
                 {
                     var links = await _db.ImageLinks
                         .Where(l => dto.RemoveLinkIds.Contains(l.Id) &&
-                                    l.TargetType == ImageOwner.Article && l.TargetId == e.Id)
+                                    l.TargetType == ImageOwner.Event && l.TargetId == e.Id)
                         .ToListAsync();
                     _db.ImageLinks.RemoveRange(links);
                     await _db.SaveChangesAsync();
@@ -320,7 +347,7 @@ namespace PromoteSeaTourism.Controllers
                 return NotFound(new ApiResponse<object>(404, $"Event with id={id} not found.", null));
 
             var links = await _db.ImageLinks
-                .Where(l => l.TargetType == ImageOwner.Article && l.TargetId == id)
+                .Where(l => l.TargetType == ImageOwner.Event && l.TargetId == id)
                 .ToListAsync();
             _db.ImageLinks.RemoveRange(links);
 

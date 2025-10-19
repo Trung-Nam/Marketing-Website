@@ -6,6 +6,7 @@ import type { Event } from "../types/event";
 import type { Category } from "../types/category";
 import LoadingSpinner from "../components/LoadingSpinner";
 import Pagination from "../components/Pagination";
+import { getEventCoverImageUrl } from "../utils/eventUtils";
 
 const EventsPage: React.FC = () => {
   const [allEvents, setAllEvents] = useState<Event[]>([]);
@@ -277,13 +278,10 @@ const EventsPage: React.FC = () => {
                     {/* Event Image */}
                     <div className="relative h-48 overflow-hidden">
                       <img
-                        src={
-                          event.images && event.images.length > 0
-                            ? event.images[0].url
-                            : "/default-avatar.svg"
-                        }
+                        src={getEventCoverImageUrl(event)}
                         alt={event.title}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                        loading="lazy"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
 

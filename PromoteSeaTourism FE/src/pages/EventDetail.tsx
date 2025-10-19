@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { eventService } from "../services/eventService";
 import type { EventDetail, EventImage } from "../types/event";
 import LoadingSpinner from "../components/LoadingSpinner";
+import { getEventCoverImageInfo } from "../utils/eventUtils";
 
 export default function EventDetailPage() {
   const { id } = useParams();
@@ -150,7 +151,10 @@ export default function EventDetailPage() {
     );
   }
 
-  const coverImage = images.find((img) => img.isCover) || images[0];
+  const coverInfo = event ? getEventCoverImageInfo(event) : null;
+  const coverUrl = coverInfo?.url;
+  const coverAlt = coverInfo?.alt;
+  const coverCaption = coverInfo?.caption;
   const featuredImages = images.filter((img) => !img.isCover);
 
   return (
@@ -210,21 +214,17 @@ export default function EventDetailPage() {
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Cover Image */}
-        {coverImage && (
+        {coverUrl && (
           <div className="rounded-2xl overflow-hidden shadow-xl mb-10">
             <button
               onClick={() =>
-                openLightbox(
-                  coverImage.url,
-                  coverImage.altText || event.title,
-                  coverImage.caption
-                )
+                openLightbox(coverUrl, coverAlt || event.title, coverCaption)
               }
               className="group relative w-full h-[380px] md:h-[480px] overflow-hidden"
             >
               <img
-                src={coverImage.url}
-                alt={coverImage.altText || event.title}
+                src={coverUrl}
+                alt={coverAlt || event.title}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 loading="lazy"
               />
@@ -247,9 +247,9 @@ export default function EventDetailPage() {
                 </div>
               </div>
             </button>
-            {coverImage.caption && (
+            {coverCaption && (
               <div className="px-4 py-2 text-sm text-gray-600 bg-white text-center text-italic">
-                {coverImage.caption}
+                {coverCaption}
               </div>
             )}
           </div>

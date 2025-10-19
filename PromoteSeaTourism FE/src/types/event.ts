@@ -11,6 +11,8 @@ export interface Event {
   placeId: number;
   isPublished: boolean;
   createdAt: string;
+  thumbnailUrl?: string;
+  coverImageId?: number;
   images: EventImage[];
 }
 
@@ -52,6 +54,8 @@ export interface EventDetail {
   isPublished: boolean;
   createdAt: string;
   updatedAt?: string;
+  thumbnailUrl?: string;
+  coverImageId?: number;
   images?: EventImage[];
 }
 
