@@ -144,11 +144,34 @@ namespace PromoteSeaTourism.Controllers
                 })
                 .ToListAsync();
 
+            // Tính ThumbnailUrl giống như List API
+            string? thumbnailUrl = null;
+            
+            // Ưu tiên CoverImageId
+            if (a.CoverImageId.HasValue)
+            {
+                var coverImage = await _db.Images.AsNoTracking()
+                    .FirstOrDefaultAsync(img => img.Id == a.CoverImageId.Value);
+                if (coverImage != null)
+                    thumbnailUrl = coverImage.Url;
+            }
+            
+            // Fallback: lấy ảnh đầu tiên trong gallery
+            if (thumbnailUrl == null && gallery.Count > 0)
+            {
+                var firstImage = gallery.OrderByDescending(img => img.IsCover)
+                                       .ThenBy(img => img.Position)
+                                       .FirstOrDefault();
+                if (firstImage != null)
+                    thumbnailUrl = firstImage.Url;
+            }
+
             var data = new
             {
                 a.Id, a.Title, a.Slug, a.Summary, a.Content,
                 a.CategoryId, a.IsPublished, a.PublishedAt, a.CreatedAt, a.UpdatedAt,
                 CoverImageId = a.CoverImageId,
+                ThumbnailUrl = thumbnailUrl,  // Thêm ThumbnailUrl
                 Images = gallery
             };
 

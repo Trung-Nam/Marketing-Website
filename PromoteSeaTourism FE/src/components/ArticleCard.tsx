@@ -1,4 +1,5 @@
 import { Article } from "../types/article";
+import { getCoverImageUrl } from "../utils/articleUtils";
 
 interface ArticleCardProps {
   article: Article;
@@ -22,7 +23,7 @@ export default function ArticleCard({ article, onClick }: ArticleCardProps) {
       {/* Article Image */}
       <div className="relative h-48 overflow-hidden">
         <img
-          src={article.thumbnailUrl}
+          src={getCoverImageUrl(article)}
           alt={article.title}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           loading="lazy"

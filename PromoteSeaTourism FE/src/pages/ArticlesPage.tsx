@@ -6,6 +6,7 @@ import type { Article } from "../types/article";
 import type { Category } from "../types/category";
 import LoadingSpinner from "../components/LoadingSpinner";
 import Pagination from "../components/Pagination";
+import { getCoverImageUrl } from "../utils/articleUtils";
 
 const ArticlesPage: React.FC = () => {
   const [allArticles, setAllArticles] = useState<Article[]>([]);
@@ -209,9 +210,10 @@ const ArticlesPage: React.FC = () => {
                   {/* Article Image */}
                   <div className="relative h-48 overflow-hidden">
                     <img
-                      src={article.thumbnailUrl || "/default-avatar.svg"}
+                      src={getCoverImageUrl(article)}
                       alt={article.title}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                      loading="lazy"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
                     <div className="absolute top-4 left-4">

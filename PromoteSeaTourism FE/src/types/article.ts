@@ -11,6 +11,7 @@ export interface Article {
   publishedAt: string;
   createdAt: string;
   updatedAt: string | null;
+  images?: ArticleImageLink[];
 }
 
 export interface ArticlesResponse {

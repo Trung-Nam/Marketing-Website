@@ -115,7 +115,7 @@ using (var scope = app.Services.CreateScope())
     const string adminEmail = "admin@example.com";
     if (!db.Users.Any(u => u.Email == adminEmail))
     {
-        var (hash, salt) = hasher.Hash("Admin@123");
+        var (hash, salt) = hasher.Hash("123456");
         db.Users.Add(new User
         {
             Email = adminEmail,
@@ -131,7 +131,7 @@ using (var scope = app.Services.CreateScope())
     const string userEmail = "user@example.com";
     if (!db.Users.Any(u => u.Email == userEmail))
     {
-        var (hash, salt) = hasher.Hash("User@123");
+        var (hash, salt) = hasher.Hash("123456");
         db.Users.Add(new User
         {
             Email = userEmail,

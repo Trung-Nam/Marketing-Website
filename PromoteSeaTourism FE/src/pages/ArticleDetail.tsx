@@ -5,6 +5,7 @@ import { categoryService } from "../services/categoryService";
 import type { ArticleDetail } from "../types/article";
 import type { Category } from "../types/category";
 import LoadingSpinner from "../components/LoadingSpinner";
+import { getCoverImageInfo } from "../utils/articleUtils";
 
 export default function ArticleDetailPage() {
   const { id } = useParams();
@@ -118,12 +119,9 @@ export default function ArticleDetailPage() {
     );
   }
 
-  const cover =
-    article.images?.find((img) => img.mediaId === article.coverImageId) ||
-    article.images?.find((img) => img.isCover) ||
-    article.images?.[0];
-  const coverUrl = cover?.url || article.thumbnailUrl || "";
-  const coverAlt = cover?.altText || article.title;
+  const coverInfo = getCoverImageInfo(article);
+  const coverUrl = coverInfo.url;
+  const coverAlt = coverInfo.alt;
   const gallery = (article.images ?? []).sort(
     (a, b) => a.position - b.position
   );
@@ -205,7 +203,9 @@ export default function ArticleDetailPage() {
         {coverUrl && (
           <div className="rounded-2xl overflow-hidden shadow-xl mb-10">
             <button
-              onClick={() => openLightbox(coverUrl, coverAlt, cover?.caption)}
+              onClick={() =>
+                openLightbox(coverUrl, coverAlt, coverInfo.caption)
+              }
               className="group relative w-full h-[380px] md:h-[480px] overflow-hidden"
             >
               <img
@@ -233,9 +233,9 @@ export default function ArticleDetailPage() {
                 </div>
               </div>
             </button>
-            {cover?.caption && (
+            {coverInfo.caption && (
               <div className="px-4 py-2 text-sm text-gray-600 bg-white text-center text-italic">
-                {cover.caption}
+                {coverInfo.caption}
               </div>
             )}
           </div>
