@@ -252,20 +252,6 @@ namespace PromoteSeaTourism.Data
             });
 
             // === IMAGELINK ===
-            b.Entity<Image>(e =>
-            {
-                e.ToTable("images");
-                e.Property(p => p.Url).HasMaxLength(500);
-                e.Property(p => p.AltText).HasMaxLength(255);
-                e.Property(p => p.Caption).HasMaxLength(500);
-                e.Property(p => p.IsCover).HasDefaultValue(false);
-                e.Property(p => p.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
-                e.HasOne(p => p.CreatedByUser)
-                    .WithMany()
-                    .HasForeignKey(p => p.CreatedBy)
-                    .OnDelete(DeleteBehavior.SetNull);
-            });
-
             b.Entity<ImageLink>(e =>
             {
                 e.ToTable("image_links");

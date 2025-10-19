@@ -115,7 +115,7 @@ using (var scope = app.Services.CreateScope())
     const string adminEmail = "admin@example.com";
     if (!db.Users.Any(u => u.Email == adminEmail))
     {
-        var (hash, salt) = hasher.Hash("123456");
+        var (hash, salt) = hasher.Hash("Admin@123");
         db.Users.Add(new User
         {
             Email = adminEmail,
@@ -131,7 +131,7 @@ using (var scope = app.Services.CreateScope())
     const string userEmail = "user@example.com";
     if (!db.Users.Any(u => u.Email == userEmail))
     {
-        var (hash, salt) = hasher.Hash("123456");
+        var (hash, salt) = hasher.Hash("User@123");
         db.Users.Add(new User
         {
             Email = userEmail,
@@ -139,23 +139,6 @@ using (var scope = app.Services.CreateScope())
             PasswordSalt = salt,
             Name = "Default User",
             Role = UserRole.User,
-            IsActive = true,
-            CreatedAt = DateTime.UtcNow
-        });
-    }
-
-    // Thêm Editor user
-    const string editorEmail = "editor@example.com";
-    if (!db.Users.Any(u => u.Email == editorEmail))
-    {
-        var (hash, salt) = hasher.Hash("123456");
-        db.Users.Add(new User
-        {
-            Email = editorEmail,
-            PasswordHash = hash,
-            PasswordSalt = salt,
-            Name = "Content Editor",
-            Role = UserRole.Editor,
             IsActive = true,
             CreatedAt = DateTime.UtcNow
         });
@@ -307,9 +290,6 @@ using (var scope = app.Services.CreateScope())
         ("Bãi biển Ba Động",  "bai-bien-ba-dong",  "Bãi biển hoang sơ, cát mịn.",     "Trà Vinh",  "beaches",         sampleImageUrls[0]),
         ("Đồi cát vàng",      "doi-cat-vang",      "Điểm check-in hoàng hôn đẹp.",     "Phan Thiết","view-check-in",   sampleImageUrls[1]),
         ("Bảo tàng Biển",     "bao-tang-bien",     "Trưng bày văn hóa ngư dân.",       "Nha Trang", "museums",         sampleImageUrls[2]),
-        ("Chợ đêm Hội An",    "cho-dem-hoi-an",    "Chợ đêm sầm uất với đèn lồng.",    "Hội An",   "markets",         sampleImageUrls[3]),
-        ("Làng gốm Thanh Hà", "lang-gom-thanh-ha", "Làng nghề gốm truyền thống.",       "Hội An",   "craft-villages",  sampleImageUrls[4]),
-        ("Công viên Quốc gia", "cong-vien-quoc-gia", "Khu bảo tồn thiên nhiên.",        "Cát Tiên", "parks-nature",    sampleImageUrls[5]),
     };
 
     // Remove old sample places with same slugs for a clean re-seed
@@ -338,6 +318,7 @@ using (var scope = app.Services.CreateScope())
             BestSeason = "3–8",
             TicketInfo = null,
             OpeningHours = null,
+            CoverImageId = imageIdByUrl[p.CoverUrl],
             CategoryId = CatId(p.CatSlug),
             IsPublished = true,
             CreatedAt = DateTime.UtcNow
@@ -350,8 +331,6 @@ using (var scope = app.Services.CreateScope())
     {
         ("Hải sản Nắng Gió", "hai-san-nang-gio", "Hải sản tươi, view biển.", "Số 12 Đường Ven Biển", "200k–500k", "seafood", sampleImageUrls[3]),
         ("Cà phê Sóng",      "ca-phe-song",      "Cafe ven biển, chill.",    "Quảng trường Biển",     "35k–80k",  "cafes",   sampleImageUrls[4]),
-        ("Nhà hàng Biển Xanh", "nha-hang-bien-xanh", "Đặc sản biển địa phương.", "Khu du lịch Biển Xanh", "150k–300k", "local-food", sampleImageUrls[0]),
-        ("Quán Cà phê Gió",  "quan-ca-phe-gio",  "Cà phê view biển đẹp.",    "Bãi biển Mũi Né",       "25k–60k",  "cafes",   sampleImageUrls[1]),
     };
 
     var restSlugs = restaurantsSeed.Select(r => r.Slug).ToArray();
@@ -374,6 +353,7 @@ using (var scope = app.Services.CreateScope())
             Phone = null,
             Website = null,
             PriceRangeText = r.Price,
+            CoverImageId = imageIdByUrl[r.CoverUrl],
             CategoryId = CatId(r.CatSlug),
             IsPublished = true,
             CreatedAt = DateTime.UtcNow
@@ -386,8 +366,6 @@ using (var scope = app.Services.CreateScope())
     {
         ("Blue Sea Resort", "blue-sea-resort", "Resort ven biển, hồ bơi vô cực.", "Khu du lịch Biển Xanh", 4, 1200000, 3800000, "hotels",    sampleImageUrls[5]),
         ("An Nhiên Homestay", "an-nhien-homestay", "Homestay gần biển, decor mộc.", "Hẻm 5 Đường Biển",     null, 450000,  950000,  "homestays", sampleImageUrls[1]),
-        ("Sunset Hotel", "sunset-hotel", "Khách sạn 3 sao view biển.", "Đường Bãi Trước", 3, 800000, 1500000, "hotels", sampleImageUrls[2]),
-        ("Beach House", "beach-house", "Nhà nghỉ gần biển, giá rẻ.", "Bãi biển Mũi Né", null, 300000, 600000, "homestays", sampleImageUrls[3]),
     };
 
     var accSlugs = accSeed.Select(a => a.Slug).ToArray();
@@ -412,6 +390,7 @@ using (var scope = app.Services.CreateScope())
             Star = a.Star,
             MinPrice = a.Min,
             MaxPrice = a.Max,
+            CoverImageId = imageIdByUrl[a.CoverUrl],
             CategoryId = CatId(a.CatSlug),
             IsPublished = true,
             CreatedAt = DateTime.UtcNow
@@ -427,8 +406,6 @@ using (var scope = app.Services.CreateScope())
     {
         ("Lễ hội Biển 2025", "le-hoi-bien-2025", "Âm nhạc & ẩm thực biển.", baiBien.Address, DateTime.UtcNow.AddDays(20), DateTime.UtcNow.AddDays(22), "festivals", sampleImageUrls[2]),
         ("Giải chạy ven biển", "giai-chay-ven-bien", "Giải chạy 10km, 21km.", baiBien.Address, DateTime.UtcNow.AddDays(35), DateTime.UtcNow.AddDays(35).AddHours(6), "sports", sampleImageUrls[0]),
-        ("Hội chợ ẩm thực", "hoi-cho-am-thuc", "Hội chợ ẩm thực địa phương.", "Quảng trường Trung tâm", DateTime.UtcNow.AddDays(45), DateTime.UtcNow.AddDays(47), "fairs", sampleImageUrls[1]),
-        ("Concert Biển", "concert-bien", "Buổi hòa nhạc ngoài trời.", "Sân khấu ven biển", DateTime.UtcNow.AddDays(60), DateTime.UtcNow.AddDays(60).AddHours(3), "music", sampleImageUrls[4]),
     };
 
     var eventSlugs = eventsSeed.Select(e => e.Slug).ToArray();
@@ -452,6 +429,7 @@ using (var scope = app.Services.CreateScope())
             StartTime = ev.Start,
             EndTime = ev.End,
             PriceInfo = "Miễn phí",
+            CoverImageId = imageIdByUrl[ev.CoverUrl],
             CategoryId = CatId(ev.CatSlug),
             IsPublished = true,
             CreatedAt = DateTime.UtcNow
@@ -460,23 +438,15 @@ using (var scope = app.Services.CreateScope())
     db.SaveChanges();
 
     // ---------- TOURS ----------
-    var toursSeed = new (string Name, string Slug, string? Summary, string Description, decimal? PriceFrom, string? Itinerary, string CatSlug, bool IsPublished)[]
+    var toursSeed = new (string Name, string Slug, string? Summary, string Description, decimal? PriceFrom, string? Itinerary, string CatSlug)[]
     {
         ("Tour Ba Động 1 ngày", "tour-ba-dong-1-ngay", "Khởi hành sáng – về chiều.", 
             "Tham quan bãi biển Ba Động, check-in, thưởng thức hải sản.", 650000,
-            "07:30 đón khách • 09:30 tắm biển • 12:00 ăn trưa • 15:00 quay về.", "day-trips", true),
+            "07:30 đón khách • 09:30 tắm biển • 12:00 ăn trưa • 15:00 quay về.", "day-trips"),
 
         ("Tour 2N1Đ Biển & Làng chài", "tour-2n1d-bien-lang-chai", "Lịch trình nhẹ nhàng, phù hợp gia đình.",
             "Ngày 1: Biển – làng chài – cafe hoàng hôn. Ngày 2: Chợ hải sản – bảo tàng biển.", 1850000,
-            "Ngày 1: 08:00 xuất phát • 10:00 biển • 16:30 cafe; Ngày 2: 07:00 chợ hải sản • 09:30 bảo tàng.", "two-three-days", true),
-
-        ("Tour Phiêu lưu Mũi Né", "tour-phieu-luu-mui-ne", "Trải nghiệm hoang dã tại Mũi Né.",
-            "Leo đồi cát, lướt ván, tham quan làng chài truyền thống.", 1200000,
-            "06:00 khởi hành • 08:00 leo đồi cát • 10:00 lướt ván • 14:00 tham quan làng chài.", "adventure", true),
-
-        ("Tour Gia đình Nha Trang", "tour-gia-dinh-nha-trang", "Tour phù hợp cho cả gia đình.",
-            "Tham quan Vinpearl, thủy cung, bãi biển Nha Trang.", 2200000,
-            "08:00 khởi hành • 10:00 Vinpearl • 14:00 thủy cung • 16:00 bãi biển.", "family", false),
+            "Ngày 1: 08:00 xuất phát • 10:00 biển • 16:30 cafe; Ngày 2: 07:00 chợ hải sản • 09:30 bảo tàng.", "two-three-days"),
     };
 
     var tourSlugs = toursSeed.Select(t => t.Slug).ToArray();
@@ -497,7 +467,6 @@ using (var scope = app.Services.CreateScope())
             PriceFrom = t.PriceFrom,
             Itinerary = t.Itinerary,
             CategoryId = CatId(t.CatSlug),
-            IsPublished = t.IsPublished,
             CreatedAt = DateTime.UtcNow
         });
     db.SaveChanges();
@@ -586,16 +555,6 @@ using (var scope = app.Services.CreateScope())
             "Cách chọn hải sản tươi ngon tại chợ địa phương.",
             "Đi chợ sớm, hỏi giá trước, ưu tiên quầy thân quen...",
             "tips", sampleImageUrls[3], true, DateTime.UtcNow.AddDays(-3)),
-
-        ("Tin tức du lịch mới", "tin-tuc-du-lich-moi",
-            "Cập nhật tin tức du lịch biển mới nhất.",
-            "Thông tin về các điểm đến mới, chính sách du lịch...",
-            "news", sampleImageUrls[1], true, DateTime.UtcNow.AddDays(-1)),
-
-        ("Hướng dẫn chụp ảnh biển", "huong-dan-chup-anh-bien",
-            "Kỹ thuật chụp ảnh đẹp tại bãi biển.",
-            "Góc chụp, thời điểm vàng, setup ánh sáng...",
-            "tips", sampleImageUrls[4], false, null),
     };
 
     foreach (var a in articlesSeed)
@@ -609,6 +568,7 @@ using (var scope = app.Services.CreateScope())
                 Slug = a.Slug,
                 Summary = a.Summary,
                 Content = a.Content,
+                CoverImageId = imageIdByUrl[a.CoverUrl],
                 CategoryId = CatId(a.CatSlug),
                 IsPublished = a.IsPublished,
                 PublishedAt = a.PublishedAt,
@@ -703,314 +663,6 @@ using (var scope = app.Services.CreateScope())
 
     Log("Seeded Articles + galleries, Reviews, Favorites.");
 
-    // ---------- CREATE IMAGE LINKS & SET COVER IMAGES ----------
-    // Tạo ImageLinks cho Places
-    foreach (var p in placesSeed)
-    {
-        var place = db.Places.FirstOrDefault(x => x.Slug == p.Slug);
-        if (place != null && imageIdByUrl.ContainsKey(p.CoverUrl))
-        {
-            var imageId = imageIdByUrl[p.CoverUrl];
-            
-            // Kiểm tra xem ImageLink đã tồn tại chưa
-            var existingLink = db.ImageLinks.FirstOrDefault(l => 
-                l.TargetType == ImageOwner.Place && 
-                l.TargetId == place.Id && 
-                l.ImageId == imageId);
-            
-            if (existingLink == null)
-            {
-                // Tạo ImageLink mới
-                db.ImageLinks.Add(new ImageLink
-                {
-                    ImageId = imageId,
-                    TargetType = ImageOwner.Place,
-                    TargetId = place.Id,
-                    Position = 0,
-                    IsCover = false,
-                    CreatedAt = DateTime.UtcNow
-                });
-            }
-        }
-    }
-    
-    // Set IsCover cho Places (chỉ 1 ảnh cover cho mỗi place)
-    foreach (var p in placesSeed)
-    {
-        var place = db.Places.FirstOrDefault(x => x.Slug == p.Slug);
-        if (place != null && imageIdByUrl.ContainsKey(p.CoverUrl))
-        {
-            var imageId = imageIdByUrl[p.CoverUrl];
-            
-            // Set IsCover = false cho tất cả ảnh của place này
-            var placeImages = db.ImageLinks
-                .Where(l => l.TargetType == ImageOwner.Place && l.TargetId == place.Id)
-                .ToList();
-            
-            foreach (var link in placeImages)
-            {
-                var image = db.Images.FirstOrDefault(x => x.Id == link.ImageId);
-                if (image != null)
-                {
-                    image.IsCover = false;
-                }
-            }
-            
-            // Set IsCover = true cho ảnh cover
-            var coverImage = db.Images.FirstOrDefault(x => x.Id == imageId);
-            if (coverImage != null)
-            {
-                coverImage.IsCover = true;
-            }
-        }
-    }
-
-    // Tạo ImageLinks cho Restaurants
-    foreach (var r in restaurantsSeed)
-    {
-        var restaurant = db.Restaurants.FirstOrDefault(x => x.Slug == r.Slug);
-        if (restaurant != null && imageIdByUrl.ContainsKey(r.CoverUrl))
-        {
-            var imageId = imageIdByUrl[r.CoverUrl];
-            
-            // Kiểm tra xem ImageLink đã tồn tại chưa
-            var existingLink = db.ImageLinks.FirstOrDefault(l => 
-                l.TargetType == ImageOwner.Restaurant && 
-                l.TargetId == restaurant.Id && 
-                l.ImageId == imageId);
-            
-            if (existingLink == null)
-            {
-                // Tạo ImageLink mới
-                db.ImageLinks.Add(new ImageLink
-                {
-                    ImageId = imageId,
-                    TargetType = ImageOwner.Restaurant,
-                    TargetId = restaurant.Id,
-                    Position = 0,
-                    IsCover = false,
-                    CreatedAt = DateTime.UtcNow
-                });
-            }
-        }
-    }
-    
-    // Set IsCover cho Restaurants (chỉ 1 ảnh cover cho mỗi restaurant)
-    foreach (var r in restaurantsSeed)
-    {
-        var restaurant = db.Restaurants.FirstOrDefault(x => x.Slug == r.Slug);
-        if (restaurant != null && imageIdByUrl.ContainsKey(r.CoverUrl))
-        {
-            var imageId = imageIdByUrl[r.CoverUrl];
-            
-            // Set IsCover = false cho tất cả ảnh của restaurant này
-            var restaurantImages = db.ImageLinks
-                .Where(l => l.TargetType == ImageOwner.Restaurant && l.TargetId == restaurant.Id)
-                .ToList();
-            
-            foreach (var link in restaurantImages)
-            {
-                var image = db.Images.FirstOrDefault(x => x.Id == link.ImageId);
-                if (image != null)
-                {
-                    image.IsCover = false;
-                }
-            }
-            
-            // Set IsCover = true cho ảnh cover
-            var coverImage = db.Images.FirstOrDefault(x => x.Id == imageId);
-            if (coverImage != null)
-            {
-                coverImage.IsCover = true;
-            }
-        }
-    }
-
-    // Tạo ImageLinks cho Accommodations
-    foreach (var a in accSeed)
-    {
-        var accommodation = db.Accommodations.FirstOrDefault(x => x.Slug == a.Slug);
-        if (accommodation != null && imageIdByUrl.ContainsKey(a.CoverUrl))
-        {
-            var imageId = imageIdByUrl[a.CoverUrl];
-            
-            // Kiểm tra xem ImageLink đã tồn tại chưa
-            var existingLink = db.ImageLinks.FirstOrDefault(l => 
-                l.TargetType == ImageOwner.Accommodation && 
-                l.TargetId == accommodation.Id && 
-                l.ImageId == imageId);
-            
-            if (existingLink == null)
-            {
-                // Tạo ImageLink mới
-                db.ImageLinks.Add(new ImageLink
-                {
-                    ImageId = imageId,
-                    TargetType = ImageOwner.Accommodation,
-                    TargetId = accommodation.Id,
-                    Position = 0,
-                    IsCover = false,
-                    CreatedAt = DateTime.UtcNow
-                });
-            }
-        }
-    }
-    
-    // Set IsCover cho Accommodations (chỉ 1 ảnh cover cho mỗi accommodation)
-    foreach (var a in accSeed)
-    {
-        var accommodation = db.Accommodations.FirstOrDefault(x => x.Slug == a.Slug);
-        if (accommodation != null && imageIdByUrl.ContainsKey(a.CoverUrl))
-        {
-            var imageId = imageIdByUrl[a.CoverUrl];
-            
-            // Set IsCover = false cho tất cả ảnh của accommodation này
-            var accommodationImages = db.ImageLinks
-                .Where(l => l.TargetType == ImageOwner.Accommodation && l.TargetId == accommodation.Id)
-                .ToList();
-            
-            foreach (var link in accommodationImages)
-            {
-                var image = db.Images.FirstOrDefault(x => x.Id == link.ImageId);
-                if (image != null)
-                {
-                    image.IsCover = false;
-                }
-            }
-            
-            // Set IsCover = true cho ảnh cover
-            var coverImage = db.Images.FirstOrDefault(x => x.Id == imageId);
-            if (coverImage != null)
-            {
-                coverImage.IsCover = true;
-            }
-        }
-    }
-
-    // Tạo ImageLinks cho Events
-    foreach (var ev in eventsSeed)
-    {
-        var eventEntity = db.Events.FirstOrDefault(x => x.Slug == ev.Slug);
-        if (eventEntity != null && imageIdByUrl.ContainsKey(ev.CoverUrl))
-        {
-            var imageId = imageIdByUrl[ev.CoverUrl];
-            
-            // Kiểm tra xem ImageLink đã tồn tại chưa
-            var existingLink = db.ImageLinks.FirstOrDefault(l => 
-                l.TargetType == ImageOwner.Event && 
-                l.TargetId == eventEntity.Id && 
-                l.ImageId == imageId);
-            
-            if (existingLink == null)
-            {
-                // Tạo ImageLink mới
-                db.ImageLinks.Add(new ImageLink
-                {
-                    ImageId = imageId,
-                    TargetType = ImageOwner.Event,
-                    TargetId = eventEntity.Id,
-                    Position = 0,
-                    IsCover = false,
-                    CreatedAt = DateTime.UtcNow
-                });
-            }
-        }
-    }
-    
-    // Set IsCover cho Events (chỉ 1 ảnh cover cho mỗi event)
-    foreach (var ev in eventsSeed)
-    {
-        var eventEntity = db.Events.FirstOrDefault(x => x.Slug == ev.Slug);
-        if (eventEntity != null && imageIdByUrl.ContainsKey(ev.CoverUrl))
-        {
-            var imageId = imageIdByUrl[ev.CoverUrl];
-            
-            // Set IsCover = false cho tất cả ảnh của event này
-            var eventImages = db.ImageLinks
-                .Where(l => l.TargetType == ImageOwner.Event && l.TargetId == eventEntity.Id)
-                .ToList();
-            
-            foreach (var link in eventImages)
-            {
-                var image = db.Images.FirstOrDefault(x => x.Id == link.ImageId);
-                if (image != null)
-                {
-                    image.IsCover = false;
-                }
-            }
-            
-            // Set IsCover = true cho ảnh cover
-            var coverImage = db.Images.FirstOrDefault(x => x.Id == imageId);
-            if (coverImage != null)
-            {
-                coverImage.IsCover = true;
-            }
-        }
-    }
-
-    // Tạo ImageLinks cho Articles
-    foreach (var a in articlesSeed)
-    {
-        var article = db.Articles.FirstOrDefault(x => x.Slug == a.Slug);
-        if (article != null && imageIdByUrl.ContainsKey(a.CoverUrl))
-        {
-            var imageId = imageIdByUrl[a.CoverUrl];
-            
-            // Kiểm tra xem ImageLink đã tồn tại chưa
-            var existingLink = db.ImageLinks.FirstOrDefault(l => 
-                l.TargetType == ImageOwner.Article && 
-                l.TargetId == article.Id && 
-                l.ImageId == imageId);
-            
-            if (existingLink == null)
-            {
-                // Tạo ImageLink mới
-                db.ImageLinks.Add(new ImageLink
-                {
-                    ImageId = imageId,
-                    TargetType = ImageOwner.Article,
-                    TargetId = article.Id,
-                    Position = 0,
-                    IsCover = false,
-                    CreatedAt = DateTime.UtcNow
-                });
-            }
-        }
-    }
-    
-    // Set IsCover cho Articles (chỉ 1 ảnh cover cho mỗi article)
-    foreach (var a in articlesSeed)
-    {
-        var article = db.Articles.FirstOrDefault(x => x.Slug == a.Slug);
-        if (article != null && imageIdByUrl.ContainsKey(a.CoverUrl))
-        {
-            var imageId = imageIdByUrl[a.CoverUrl];
-            
-            // Set IsCover = false cho tất cả ảnh của article này
-            var articleImages = db.ImageLinks
-                .Where(l => l.TargetType == ImageOwner.Article && l.TargetId == article.Id)
-                .ToList();
-            
-            foreach (var link in articleImages)
-            {
-                var image = db.Images.FirstOrDefault(x => x.Id == link.ImageId);
-                if (image != null)
-                {
-                    image.IsCover = false;
-                }
-            }
-            
-            // Set IsCover = true cho ảnh cover
-            var coverImage = db.Images.FirstOrDefault(x => x.Id == imageId);
-            if (coverImage != null)
-            {
-                coverImage.IsCover = true;
-            }
-        }
-    }
-
-    db.SaveChanges();
-    Log("Created ImageLinks and set IsCover on Images.");
 
 }
 

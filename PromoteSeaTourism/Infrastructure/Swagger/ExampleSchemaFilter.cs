@@ -313,6 +313,118 @@ namespace PromoteSeaTourism.Infrastructure.Swagger
                 };
                 return;
             }
+
+            if (t == typeof(CreateEventWithImagesDto))
+            {
+                schema.Example = new OpenApiObject
+                {
+                    ["title"] = new OpenApiString("Lễ hội biển 2024"),
+                    ["slug"] = new OpenApiString("le-hoi-bien-2024"),
+                    ["summary"] = new OpenApiString("Lễ hội biển lớn nhất năm với nhiều hoạt động thú vị."),
+                    ["content"] = new OpenApiString("Chương trình lễ hội bao gồm..."),
+                    ["startTime"] = new OpenApiString("2024-12-25T08:00:00Z"),
+                    ["endTime"] = new OpenApiString("2024-12-25T22:00:00Z"),
+                    ["address"] = new OpenApiString("Bãi biển Mũi Né"),
+                    ["priceInfo"] = new OpenApiString("Miễn phí tham gia"),
+                    ["categoryId"] = new OpenApiLong(1),
+                    ["placeId"] = new OpenApiLong(1),
+                    ["isPublished"] = new OpenApiBoolean(true),
+                    ["images"] = new OpenApiArray
+                    {
+                        new OpenApiObject
+                        {
+                            ["url"] = new OpenApiString("https://picsum.photos/id/1015/1200/800"),
+                            ["altText"] = new OpenApiString("Ảnh lễ hội"),
+                            ["caption"] = new OpenApiString("Bìa lễ hội"),
+                            ["position"] = new OpenApiInteger(0),
+                            ["isCover"] = new OpenApiBoolean(true)
+                        }
+                    },
+                    ["coverImageId"] = new OpenApiNull()
+                };
+                return;
+            }
+
+            if (t == typeof(UpdateEventWithImagesDto))
+            {
+                schema.Example = new OpenApiObject
+                {
+                    ["title"] = new OpenApiString("Lễ hội biển 2024 - Cập nhật"),
+                    ["slug"] = new OpenApiString("le-hoi-bien-2024-updated"),
+                    ["summary"] = new OpenApiString("Lễ hội biển lớn nhất năm với nhiều hoạt động thú vị - Phiên bản cập nhật."),
+                    ["content"] = new OpenApiString("Chương trình lễ hội bao gồm nhiều hoạt động mới..."),
+                    ["startTime"] = new OpenApiString("2024-12-25T09:00:00Z"),
+                    ["endTime"] = new OpenApiString("2024-12-25T23:00:00Z"),
+                    ["address"] = new OpenApiString("Bãi biển Mũi Né - Khu vực mở rộng"),
+                    ["priceInfo"] = new OpenApiString("Miễn phí tham gia, có phí cho một số hoạt động đặc biệt"),
+                    ["categoryId"] = new OpenApiLong(1),
+                    ["placeId"] = new OpenApiLong(1),
+                    ["isPublished"] = new OpenApiBoolean(true),
+                    // Thêm ảnh mới (tạo media và gắn link)
+                    ["addImages"] = new OpenApiArray
+                    {
+                        new OpenApiObject
+                        {
+                            ["url"] = new OpenApiString("https://picsum.photos/id/1031/1200/800"),
+                            ["altText"] = new OpenApiString("Ảnh lễ hội mới"),
+                            ["caption"] = new OpenApiString("Hoạt động mới"),
+                            ["position"] = new OpenApiInteger(0),
+                            ["isCover"] = new OpenApiBoolean(true)
+                        }
+                    },
+                    // Gắn thêm media đã có sẵn (IDs của bảng images)
+                    ["attachMediaIds"] = new OpenApiArray { new OpenApiLong(101), new OpenApiLong(102) },
+                    // Gỡ các link ảnh hiện có (IDs của bảng image_links)
+                    ["removeLinkIds"] = new OpenApiArray { new OpenApiLong(201) },
+                    // Sắp xếp lại link ảnh
+                    ["reorders"] = new OpenApiArray
+                    {
+                        new OpenApiObject { ["imageLinkId"] = new OpenApiLong(301), ["position"] = new OpenApiInteger(1) }
+                    },
+                    // Đặt ảnh đại diện = mediaId đã gắn
+                    ["coverImageId"] = new OpenApiLong(101)
+                };
+                return;
+            }
+
+            if (t == typeof(UpdateTourWithImagesDto))
+            {
+                schema.Example = new OpenApiObject
+                {
+                    ["name"] = new OpenApiString("Tour biển 3 ngày 2 đêm - Cập nhật"),
+                    ["slug"] = new OpenApiString("tour-bien-3-ngay-2-dem-updated"),
+                    ["summary"] = new OpenApiString("Tour biển 3 ngày 2 đêm với nhiều hoạt động thú vị - Phiên bản cập nhật."),
+                    ["description"] = new OpenApiString("Chương trình tour bao gồm nhiều hoạt động mới..."),
+                    ["priceFrom"] = new OpenApiDouble(2500000),
+                    ["itinerary"] = new OpenApiString("Ngày 1: Khởi hành... Ngày 2: Tham quan... Ngày 3: Trở về..."),
+                    ["categoryId"] = new OpenApiLong(1),
+                    ["isPublished"] = new OpenApiBoolean(true),
+                    // Thêm ảnh mới (tạo media và gắn link)
+                    ["addImages"] = new OpenApiArray
+                    {
+                        new OpenApiObject
+                        {
+                            ["url"] = new OpenApiString("https://picsum.photos/id/1031/1200/800"),
+                            ["altText"] = new OpenApiString("Ảnh tour mới"),
+                            ["caption"] = new OpenApiString("Hoạt động mới"),
+                            ["position"] = new OpenApiInteger(0),
+                            ["isCover"] = new OpenApiBoolean(true)
+                        }
+                    },
+                    // Gắn thêm media đã có sẵn (IDs của bảng images)
+                    ["attachMediaIds"] = new OpenApiArray { new OpenApiLong(101), new OpenApiLong(102) },
+                    // Gỡ các link ảnh hiện có (IDs của bảng image_links)
+                    ["removeLinkIds"] = new OpenApiArray { new OpenApiLong(201) },
+                    // Sắp xếp lại link ảnh
+                    ["reorders"] = new OpenApiArray
+                    {
+                        new OpenApiObject { ["imageLinkId"] = new OpenApiLong(301), ["position"] = new OpenApiInteger(1) }
+                    },
+                    // Đặt ảnh đại diện = mediaId đã gắn
+                    ["coverImageId"] = new OpenApiLong(101)
+                };
+                return;
+            }
         }
     }
 }

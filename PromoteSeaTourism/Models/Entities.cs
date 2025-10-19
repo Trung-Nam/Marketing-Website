@@ -7,7 +7,7 @@ namespace PromoteSeaTourism.Models
     public enum UserRole { User, Editor, Admin }
     public enum CategoryScope { Article, Tour, Place, Event, Accommodation, Restaurant }
     public enum ContentTarget { Article, Tour, Place, Event, Accommodation, Restaurant }
-    public enum ImageOwner { Article, Restaurant, Accommodation, Review, Tour, Event, Place }
+    public enum ImageOwner { Article, Restaurant, Accommodation, Review, Tour, Event }
 
     // ========== USER ==========
     public class User
@@ -90,9 +90,7 @@ namespace PromoteSeaTourism.Models
         public decimal? PriceFrom { get; set; }
         public string? Itinerary { get; set; }   // TEXT NULL
         public long CategoryId { get; set; }
-        public bool IsPublished { get; set; } = true;
         public DateTime CreatedAt { get; set; }
-        public DateTime? UpdatedAt { get; set; }
         public Category Category { get; set; } = null!;
     }
 
@@ -191,7 +189,6 @@ namespace PromoteSeaTourism.Models
         public string Url { get; set; } = default!;
         public string? AltText { get; set; }
         public string? Caption { get; set; }
-        public bool IsCover { get; set; } = false;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public long? CreatedBy { get; set; }
         public User? CreatedByUser { get; set; }

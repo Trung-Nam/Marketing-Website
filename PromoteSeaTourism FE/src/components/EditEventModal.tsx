@@ -28,12 +28,12 @@ export default function EditEventModal({
   event,
 }: EditEventModalProps) {
   const [loading, setLoading] = useState(false);
-  const [loadingEvent, setLoadingEvent] = useState(false);
+  const [detailLoading, setDetailLoading] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(false);
   const [places, setPlaces] = useState<Place[]>([]);
   const [placesLoading, setPlacesLoading] = useState(false);
-  const [, setEventDetail] = useState<EventDetail | null>(null);
+  const [eventDetail, setEventDetail] = useState<EventDetail | null>(null);
   const [formData, setFormData] = useState<UpdateEventRequest>({
     title: "",
     slug: "",
@@ -54,6 +54,7 @@ export default function EditEventModal({
     coverImageId: 0,
   });
 
+  const [newImages, setNewImages] = useState<EventImageRequest[]>([]);
   const [newImage, setNewImage] = useState<EventImageRequest>({
     url: "",
     altText: "",
@@ -61,18 +62,6 @@ export default function EditEventModal({
     position: 0,
     isCover: false,
   });
-
-  const [existingImages, setExistingImages] = useState<
-    Array<{
-      linkId: number;
-      mediaId: number;
-      url: string;
-      altText: string;
-      caption: string;
-      position: number;
-      isCover: boolean;
-    }>
-  >([]);
 
   const loadCategories = useCallback(async () => {
     setCategoriesLoading(true);
@@ -109,18 +98,13 @@ export default function EditEventModal({
   const loadEventDetail = useCallback(async () => {
     if (!event) return;
 
-    setLoadingEvent(true);
+    setDetailLoading(true);
     try {
       const eventData = await eventService.getEventById(event.id);
-      console.log("Event data loaded:", eventData);
-      console.log("Category object:", eventData.category);
-      console.log("Place object:", eventData.place);
-
       setEventDetail(eventData);
-      setExistingImages(eventData.images || []);
 
       // Populate form with existing data
-      const newFormData = {
+      setFormData({
         title: eventData.title || "",
         slug: eventData.slug || "",
         summary: eventData.summary || "",
@@ -141,30 +125,26 @@ export default function EditEventModal({
         attachMediaIds: [],
         removeLinkIds: [],
         reorders: [],
-        coverImageId:
-          (eventData as EventDetail & { coverImageId?: number }).coverImageId ||
-          0,
-      };
-
-      console.log("Setting form data:", newFormData);
-      console.log("Category ID in form:", newFormData.categoryId);
-      console.log("Place ID in form:", newFormData.placeId);
-      setFormData(newFormData);
+        coverImageId: 0,
+      });
     } catch (error) {
       console.error("Error loading event detail:", error);
       toast.error("Không thể tải thông tin event!");
     } finally {
-      setLoadingEvent(false);
+      setDetailLoading(false);
     }
   }, [event]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!event) return;
+    if (!formData.title.trim()) {
+      toast.error("Vui lòng nhập tên event!");
+      return;
+    }
 
-    if (!formData.title.trim() || !formData.slug.trim()) {
-      toast.error("Vui lòng nhập đầy đủ thông tin bắt buộc!");
+    if (!formData.slug.trim()) {
+      toast.error("Vui lòng nhập slug!");
       return;
     }
 
@@ -183,21 +163,34 @@ export default function EditEventModal({
       return;
     }
 
+    if (formData.categoryId === 0) {
+      toast.error("Vui lòng chọn category!");
+      return;
+    }
+
+    if (formData.placeId === 0) {
+      toast.error("Vui lòng chọn place!");
+      return;
+    }
+
+    if (!event) return;
+
     setLoading(true);
     try {
-      await eventService.updateEvent(event.id, formData);
+      console.log("Updating event with data:", formData);
+      console.log("New images:", newImages);
+
+      const updateData: UpdateEventRequest = {
+        ...formData,
+        addImages: newImages.filter((img) => img.url.trim() !== ""),
+      };
+
+      await eventService.updateEvent(event.id, updateData);
       toast.success("Cập nhật event thành công!");
       onSuccess?.();
-      handleClose();
-    } catch (error: unknown) {
+      onClose();
+    } catch (error) {
       console.error("Error updating event:", error);
-      if (error && typeof error === "object" && "response" in error) {
-        const axiosError = error as {
-          response: { data: unknown; status: number };
-        };
-        console.error("Server response:", axiosError.response.data);
-        console.error("Status:", axiosError.response.status);
-      }
       // Error message is already shown by axios interceptor
     } finally {
       setLoading(false);
@@ -205,53 +198,51 @@ export default function EditEventModal({
   };
 
   const handleClose = () => {
-    setFormData({
-      title: "",
-      slug: "",
-      summary: "",
-      content: "",
-      startTime: "",
-      endTime: "",
-      address: "",
-      priceInfo: "",
-      categoryId: 0,
-      placeId: 0,
-      isPublished: false,
-      createdAt: "",
-      addImages: [],
-      attachMediaIds: [],
-      removeLinkIds: [],
-      reorders: [],
-      coverImageId: 0,
-    });
-    setNewImage({
-      url: "",
-      altText: "",
-      caption: "",
-      position: 0,
-      isCover: false,
-    });
-    setExistingImages([]);
-    setEventDetail(null);
-    onClose();
+    if (!loading && !detailLoading) {
+      onClose();
+      // Reset form when closing
+      setFormData({
+        title: "",
+        slug: "",
+        summary: "",
+        content: "",
+        startTime: "",
+        endTime: "",
+        address: "",
+        priceInfo: "",
+        categoryId: 0,
+        placeId: 0,
+        isPublished: false,
+        createdAt: "",
+        addImages: [],
+        attachMediaIds: [],
+        removeLinkIds: [],
+        reorders: [],
+        coverImageId: 0,
+      });
+      setNewImages([]);
+      setNewImage({
+        url: "",
+        altText: "",
+        caption: "",
+        position: 0,
+        isCover: false,
+      });
+      setEventDetail(null);
+    }
   };
 
-  const addImage = () => {
+  const addNewImage = () => {
     if (!newImage.url.trim()) {
-      toast.error("Vui lòng nhập URL ảnh!");
+      toast.error("Vui lòng nhập URL hình ảnh!");
       return;
     }
 
-    const imageToAdd = {
+    const imageToAdd: EventImageRequest = {
       ...newImage,
-      position: formData.addImages.length,
+      position: newImages.length,
     };
-
-    setFormData({
-      ...formData,
-      addImages: [...formData.addImages, imageToAdd],
-    });
-
+    setNewImages([...newImages, imageToAdd]);
     setNewImage({
       url: "",
       altText: "",
@@ -262,66 +253,101 @@ export default function EditEventModal({
   };
 
   const removeNewImage = (index: number) => {
-    setFormData({
-      ...formData,
-      addImages: formData.addImages.filter((_, i) => i !== index),
-    });
+    const updatedImages = newImages.filter((_, i) => i !== index);
+    const finalImages = updatedImages.map((img, i) => ({
+      ...img,
+      position: i,
+      isCover: i === 0,
+    }));
+    setNewImages(finalImages);
   };
 
-  const setCoverImage = (index: number) => {
-    setFormData({
-      ...formData,
-      addImages: formData.addImages.map((img, i) => ({
-        ...img,
-        isCover: i === index,
-      })),
-    });
+  const setNewCoverImage = (index: number) => {
+    const updatedImages = newImages.map((img, i) => ({
+      ...img,
+      isCover: i === index,
+    }));
+    setNewImages(updatedImages);
+  };
+
+  const setCoverExistingImage = (mediaId: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      coverImageId: mediaId,
+    }));
   };
 
   const removeExistingImage = (linkId: number) => {
-    setFormData({
-      ...formData,
-      removeLinkIds: [...formData.removeLinkIds, linkId],
-    });
-    setExistingImages(existingImages.filter((img) => img.linkId !== linkId));
-  };
-
-  const setExistingImageAsCover = (mediaId: number) => {
-    setFormData({
-      ...formData,
-      coverImageId: mediaId,
-    });
+    setFormData((prev) => ({
+      ...prev,
+      removeLinkIds: [...prev.removeLinkIds, linkId],
+    }));
   };
 
   // Load data when modal opens
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && event) {
+      loadEventDetail();
       loadCategories();
       loadPlaces();
-      loadEventDetail();
     }
-  }, [isOpen, loadCategories, loadPlaces, loadEventDetail]);
+  }, [isOpen, event, loadEventDetail, loadCategories, loadPlaces]);
 
-  if (!isOpen) return null;
+  // Reset form when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      setFormData({
+        title: "",
+        slug: "",
+        summary: "",
+        content: "",
+        startTime: "",
+        endTime: "",
+        address: "",
+        priceInfo: "",
+        categoryId: 0,
+        placeId: 0,
+        isPublished: false,
+        createdAt: "",
+        addImages: [],
+        attachMediaIds: [],
+        removeLinkIds: [],
+        reorders: [],
+        coverImageId: 0,
+      });
+      setNewImages([]);
+      setNewImage({
+        url: "",
+        altText: "",
+        caption: "",
+        position: 0,
+        isCover: false,
+      });
+      setEventDetail(null);
+    }
+  }, [isOpen]);
+
+  if (!isOpen || !event) return null;
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
-      title="Chỉnh sửa Event"
+      title="Chỉnh Sửa Event"
       size="xl"
     >
-      <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg p-6 max-h-[80vh] overflow-y-auto">
-        {loadingEvent ? (
-          <div className="flex justify-center items-center py-8">
-            <LoadingSpinner />
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      {detailLoading ? (
+        <div className="flex justify-center py-8">
+          <LoadingSpinner />
+        </div>
+      ) : (
+        <div className="max-h-[80vh] overflow-y-auto">
+          <form onSubmit={handleSubmit} className="space-y-6 pr-2">
+            {/* Basic Information */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-white mb-1">
-                  Tiêu đề *
+                  Tên Event *
                 </label>
                 <input
                   type="text"
@@ -331,7 +357,8 @@ export default function EditEventModal({
                   }
                   disabled={loading}
                   className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-white placeholder-white/60"
-                  placeholder="Nhập tiêu đề event"
+                  placeholder="Nhập tên event"
+                  required
                 />
               </div>
 
@@ -347,7 +374,8 @@ export default function EditEventModal({
                   }
                   disabled={loading}
                   className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-white placeholder-white/60"
-                  placeholder="nhap-slug-event"
+                  placeholder="event-slug"
+                  required
                 />
               </div>
             </div>
@@ -384,71 +412,87 @@ export default function EditEventModal({
               />
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-white mb-1">
-                  Category (Current: {formData.categoryId})
+                  Category *
                 </label>
-                <select
-                  value={formData.categoryId || 0}
-                  onChange={(e) => {
-                    console.log("Category changed to:", e.target.value);
-                    setFormData({
-                      ...formData,
-                      categoryId: parseInt(e.target.value) || 0,
-                    });
-                  }}
-                  disabled={loading || categoriesLoading}
-                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-white"
-                >
-                  <option value={0} className="bg-gray-800 text-white">
-                    {categoriesLoading ? "Đang tải..." : "Không chọn category"}
-                  </option>
-                  {categories.map((category) => (
-                    <option
-                      key={category.id}
-                      value={category.id}
-                      className="bg-gray-800 text-white"
-                    >
-                      {category.name}
+                {categoriesLoading ? (
+                  <div className="flex items-center">
+                    <LoadingSpinner />
+                    <span className="ml-2 text-white">
+                      Đang tải categories...
+                    </span>
+                  </div>
+                ) : (
+                  <select
+                    value={formData.categoryId}
+                    onChange={(e) => {
+                      setFormData({
+                        ...formData,
+                        categoryId: parseInt(e.target.value) || 0,
+                      });
+                    }}
+                    disabled={loading || categoriesLoading}
+                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-white"
+                    required
+                  >
+                    <option value={0} className="bg-gray-800 text-white">
+                      Chọn category
                     </option>
-                  ))}
-                </select>
+                    {categories.map((category) => (
+                      <option
+                        key={category.id}
+                        value={category.id}
+                        className="bg-gray-800 text-white"
+                      >
+                        {category.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-white mb-1">
-                  Place (Current: {formData.placeId})
+                  Place *
                 </label>
-                <select
-                  value={formData.placeId || 0}
-                  onChange={(e) => {
-                    console.log("Place changed to:", e.target.value);
-                    setFormData({
-                      ...formData,
-                      placeId: parseInt(e.target.value) || 0,
-                    });
-                  }}
-                  disabled={loading || placesLoading}
-                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-white"
-                >
-                  <option value={0} className="bg-gray-800 text-white">
-                    {placesLoading ? "Đang tải..." : "Không chọn place"}
-                  </option>
-                  {places.map((place) => (
-                    <option
-                      key={place.id}
-                      value={place.id}
-                      className="bg-gray-800 text-white"
-                    >
-                      {place.name}
+                {placesLoading ? (
+                  <div className="flex items-center">
+                    <LoadingSpinner />
+                    <span className="ml-2 text-white">Đang tải places...</span>
+                  </div>
+                ) : (
+                  <select
+                    value={formData.placeId}
+                    onChange={(e) => {
+                      setFormData({
+                        ...formData,
+                        placeId: parseInt(e.target.value) || 0,
+                      });
+                    }}
+                    disabled={loading || placesLoading}
+                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-white"
+                    required
+                  >
+                    <option value={0} className="bg-gray-800 text-white">
+                      Chọn place
                     </option>
-                  ))}
-                </select>
+                    {places.map((place) => (
+                      <option
+                        key={place.id}
+                        value={place.id}
+                        className="bg-gray-800 text-white"
+                      >
+                        {place.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-white mb-1">
                   Thời gian bắt đầu *
@@ -461,6 +505,7 @@ export default function EditEventModal({
                   }
                   disabled={loading}
                   className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-white"
+                  required
                 />
               </div>
 
@@ -476,253 +521,238 @@ export default function EditEventModal({
                   }
                   disabled={loading}
                   className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-white"
+                  required
                 />
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-white mb-1">
-                Địa chỉ *
-              </label>
-              <input
-                type="text"
-                value={formData.address}
-                onChange={(e) =>
-                  setFormData({ ...formData, address: e.target.value })
-                }
-                disabled={loading}
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-white placeholder-white/60"
-                placeholder="Nhập địa chỉ event"
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-white mb-1">
+                  Địa chỉ *
+                </label>
+                <input
+                  type="text"
+                  value={formData.address}
+                  onChange={(e) =>
+                    setFormData({ ...formData, address: e.target.value })
+                  }
+                  disabled={loading}
+                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-white placeholder-white/60"
+                  placeholder="Nhập địa chỉ event"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-white mb-1">
+                  Thông tin giá
+                </label>
+                <input
+                  type="text"
+                  value={formData.priceInfo}
+                  onChange={(e) =>
+                    setFormData({ ...formData, priceInfo: e.target.value })
+                  }
+                  disabled={loading}
+                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-white placeholder-white/60"
+                  placeholder="Nhập thông tin giá"
+                />
+              </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-white mb-1">
-                Thông tin giá
-              </label>
-              <input
-                type="text"
-                value={formData.priceInfo}
-                onChange={(e) =>
-                  setFormData({ ...formData, priceInfo: e.target.value })
-                }
-                disabled={loading}
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-white placeholder-white/60"
-                placeholder="Nhập thông tin giá"
-              />
-            </div>
-
-            {/* Image Management */}
-            <div className="border-t border-white/20 pt-6">
-              <h3 className="text-lg font-medium text-white mb-4">
-                Quản lý ảnh
-              </h3>
-
-              {/* Existing Images */}
-              {existingImages.length > 0 && (
-                <div className="bg-white/5 rounded-lg p-4 mb-4">
-                  <h4 className="text-md font-medium text-white mb-3">
-                    Ảnh hiện có
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {existingImages.map((image) => (
-                      <div
-                        key={image.linkId}
-                        className="bg-white/10 rounded-lg p-3"
-                      >
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-white font-medium">
-                            Ảnh {image.position + 1}
+            {/* Current Images */}
+            {eventDetail &&
+              eventDetail.images &&
+              eventDetail.images.length > 0 && (
+                <div className="mb-4">
+                  <p className="text-sm text-white/80 mb-2">
+                    Hình ảnh hiện tại:
+                  </p>
+                  <div className="space-y-2">
+                    {eventDetail.images
+                      .filter(
+                        (image) => !formData.removeLinkIds.includes(image.id)
+                      )
+                      .map((image) => (
+                        <div
+                          key={image.id}
+                          className="flex items-center justify-between p-2 bg-white/5 rounded border border-white/10"
+                        >
+                          <div className="flex items-center gap-2">
+                            <img
+                              src={image.url}
+                              alt={image.altText || ""}
+                              loading="lazy"
+                              className="w-8 h-8 object-cover rounded"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src =
+                                  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24'%3E%3Cpath fill='%23fff' d='M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z'/%3E%3C/svg%3E";
+                              }}
+                            />
+                            <div className="text-white text-sm">
+                              <div className="font-medium">
+                                {image.caption || "No caption"}
+                              </div>
+                              <div className="text-white/60">
+                                {image.altText || "No alt text"}
+                              </div>
+                            </div>
                             {image.isCover && (
-                              <span className="ml-2 px-2 py-1 bg-ocean-600 text-white text-xs rounded">
+                              <span className="px-2 py-1 bg-gradient-to-r from-ocean-600 to-turquoise-600 text-white text-xs rounded">
                                 Bìa
                               </span>
                             )}
-                          </span>
-                          <div className="flex gap-2">
-                            {!image.isCover && (
+                            {formData.coverImageId === image.id && (
+                              <span className="px-2 py-1 bg-blue-600 text-white text-xs rounded">
+                                Sẽ là bìa
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex gap-1">
+                            {formData.coverImageId !== image.id && (
                               <button
                                 type="button"
-                                onClick={() =>
-                                  setExistingImageAsCover(image.mediaId)
-                                }
-                                className="text-ocean-400 hover:text-ocean-300 text-sm"
+                                onClick={() => setCoverExistingImage(image.id)}
+                                className="px-2 py-1 bg-white/20 text-white rounded text-xs hover:bg-white/30 transition-colors"
                               >
                                 Đặt bìa
                               </button>
                             )}
                             <button
                               type="button"
-                              onClick={() => removeExistingImage(image.linkId)}
-                              className="text-red-400 hover:text-red-300 text-sm"
+                              onClick={() => removeExistingImage(image.id)}
+                              className="px-2 py-1 bg-red-500/20 text-red-400 rounded text-xs hover:bg-red-500/30 transition-colors"
                             >
                               Xóa
                             </button>
                           </div>
                         </div>
-                        <img
-                          src={image.url}
-                          alt={image.altText || ""}
-                          loading="lazy"
-                          className="w-full h-32 object-cover rounded"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src =
-                              "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 24 24'%3E%3Cpath fill='%23ccc' d='M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z'/%3E%3C/svg%3E";
-                          }}
-                        />
-                        {image.caption && (
-                          <p className="text-white/80 text-sm mt-1">
-                            {image.caption}
-                          </p>
-                        )}
-                      </div>
-                    ))}
+                      ))}
                   </div>
                 </div>
               )}
 
-              {/* Add New Image */}
-              <div className="bg-white/5 rounded-lg p-4 mb-4">
-                <h4 className="text-md font-medium text-white mb-3">
-                  Thêm ảnh mới
-                </h4>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-white mb-1">
-                      URL ảnh
-                    </label>
+            {/* New Images Section */}
+            <div>
+              <label className="block text-sm font-medium text-white mb-2">
+                Thêm hình ảnh mới
+              </label>
+
+              {/* Add Image Form */}
+              <div className="space-y-2 p-3 bg-white/5 rounded-lg border border-white/10">
+                <input
+                  type="url"
+                  value={newImage.url}
+                  onChange={(e) =>
+                    setNewImage({ ...newImage, url: e.target.value })
+                  }
+                  placeholder="URL hình ảnh"
+                  className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded text-white placeholder-white/60 text-sm"
+                />
+                <input
+                  type="text"
+                  value={newImage.altText}
+                  onChange={(e) =>
+                    setNewImage({ ...newImage, altText: e.target.value })
+                  }
+                  placeholder="Alt text"
+                  className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded text-white placeholder-white/60 text-sm"
+                />
+                <input
+                  type="text"
+                  value={newImage.caption}
+                  onChange={(e) =>
+                    setNewImage({ ...newImage, caption: e.target.value })
+                  }
+                  placeholder="Caption"
+                  className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded text-white placeholder-white/60 text-sm"
+                />
+                <div className="flex items-center gap-2">
+                  <label className="flex items-center text-white text-sm">
                     <input
-                      type="url"
-                      value={newImage.url}
+                      type="checkbox"
+                      checked={newImage.isCover}
                       onChange={(e) =>
-                        setNewImage({ ...newImage, url: e.target.value })
+                        setNewImage({ ...newImage, isCover: e.target.checked })
                       }
-                      disabled={loading}
-                      className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-white placeholder-white/60"
-                      placeholder="https://example.com/image.jpg"
+                      className="mr-2"
                     />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-white mb-1">
-                      Alt Text
-                    </label>
-                    <input
-                      type="text"
-                      value={newImage.altText}
-                      onChange={(e) =>
-                        setNewImage({ ...newImage, altText: e.target.value })
-                      }
-                      disabled={loading}
-                      className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-white placeholder-white/60"
-                      placeholder="Mô tả ảnh"
-                    />
-                  </div>
+                    Ảnh bìa
+                  </label>
+                  <button
+                    type="button"
+                    onClick={addNewImage}
+                    className="px-3 py-1 bg-white/20 text-white rounded text-sm hover:bg-white/30 transition-colors"
+                  >
+                    Thêm
+                  </button>
                 </div>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
-                  <div>
-                    <label className="block text-sm font-medium text-white mb-1">
-                      Caption
-                    </label>
-                    <input
-                      type="text"
-                      value={newImage.caption}
-                      onChange={(e) =>
-                        setNewImage({ ...newImage, caption: e.target.value })
-                      }
-                      disabled={loading}
-                      className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-white placeholder-white/60"
-                      placeholder="Chú thích ảnh"
-                    />
-                  </div>
-                  <div className="flex items-center">
-                    <label className="flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={newImage.isCover}
-                        onChange={(e) =>
-                          setNewImage({
-                            ...newImage,
-                            isCover: e.target.checked,
-                          })
-                        }
-                        disabled={loading}
-                        className="mr-2"
-                      />
-                      <span className="text-white">Đặt làm ảnh bìa</span>
-                    </label>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={addImage}
-                  disabled={loading || !newImage.url.trim()}
-                  className="mt-4 px-4 py-2 bg-ocean-600 text-white rounded-lg hover:bg-ocean-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  Thêm ảnh
-                </button>
               </div>
 
               {/* New Images List */}
-              {formData.addImages.length > 0 && (
-                <div className="bg-white/5 rounded-lg p-4 mb-4">
-                  <h4 className="text-md font-medium text-white mb-3">
-                    Ảnh mới sẽ thêm
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {formData.addImages.map((image, index) => (
-                      <div key={index} className="bg-white/10 rounded-lg p-3">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-white font-medium">
-                            Ảnh {index + 1}
-                            {image.isCover && (
-                              <span className="ml-2 px-2 py-1 bg-ocean-600 text-white text-xs rounded">
-                                Bìa
-                              </span>
-                            )}
-                          </span>
-                          <div className="flex gap-2">
-                            {!image.isCover && (
-                              <button
-                                type="button"
-                                onClick={() => setCoverImage(index)}
-                                className="text-ocean-400 hover:text-ocean-300 text-sm"
-                              >
-                                Đặt bìa
-                              </button>
-                            )}
-                            <button
-                              type="button"
-                              onClick={() => removeNewImage(index)}
-                              className="text-red-400 hover:text-red-300 text-sm"
-                            >
-                              Xóa
-                            </button>
-                          </div>
-                        </div>
+              {newImages.length > 0 && (
+                <div className="mt-2 space-y-2">
+                  <p className="text-sm text-white/80">
+                    Hình ảnh mới sẽ được thêm:
+                  </p>
+                  {newImages.map((img, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between p-2 bg-white/5 rounded border border-white/10"
+                    >
+                      <div className="flex items-center gap-2">
                         <img
-                          src={image.url}
-                          alt={image.altText}
+                          src={img.url}
+                          alt={img.altText || ""}
                           loading="lazy"
-                          className="w-full h-32 object-cover rounded"
+                          className="w-8 h-8 object-cover rounded"
                           onError={(e) => {
                             (e.target as HTMLImageElement).src =
-                              "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 24 24'%3E%3Cpath fill='%23ccc' d='M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z'/%3E%3C/svg%3E";
+                              "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24'%3E%3Cpath fill='%23fff' d='M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z'/%3E%3C/svg%3E";
                           }}
                         />
-                        {image.caption && (
-                          <p className="text-white/80 text-sm mt-1">
-                            {image.caption}
-                          </p>
+                        <div className="text-white text-sm">
+                          <div className="font-medium">
+                            {img.caption || "No caption"}
+                          </div>
+                          <div className="text-white/60">
+                            {img.altText || "No alt text"}
+                          </div>
+                        </div>
+                        {img.isCover && (
+                          <span className="px-2 py-1 bg-gradient-to-r from-ocean-600 to-turquoise-600 text-white text-xs rounded">
+                            Bìa
+                          </span>
                         )}
                       </div>
-                    ))}
-                  </div>
+                      <div className="flex gap-1">
+                        {!img.isCover && (
+                          <button
+                            type="button"
+                            onClick={() => setNewCoverImage(index)}
+                            className="px-2 py-1 bg-white/20 text-white rounded text-xs hover:bg-white/30 transition-colors"
+                          >
+                            Đặt bìa
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => removeNewImage(index)}
+                          className="px-2 py-1 bg-red-500/20 text-red-400 rounded text-xs hover:bg-red-500/30 transition-colors"
+                        >
+                          Xóa
+                        </button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
 
-            <div className="flex items-center">
-              <label className="flex items-center">
+            {/* Published Status */}
+            <div>
+              <label className="flex items-center space-x-3">
                 <input
                   type="checkbox"
                   checked={formData.isPublished}
@@ -730,32 +760,32 @@ export default function EditEventModal({
                     setFormData({ ...formData, isPublished: e.target.checked })
                   }
                   disabled={loading}
-                  className="mr-2"
+                  className="h-4 w-4 text-white/60 focus:ring-white/50 border-white/20 rounded bg-white/10"
                 />
-                <span className="text-white">Xuất bản</span>
+                <span className="text-white">Xuất bản event</span>
               </label>
             </div>
 
-            <div className="flex justify-end gap-3 pt-4">
+            {/* Submit Buttons */}
+            <div className="flex justify-end space-x-3 pt-6 border-t border-white/20">
               <button
                 type="button"
-                onClick={handleClose}
-                disabled={loading}
-                className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                onClick={onClose}
+                className="px-4 py-2 text-white bg-white/20 rounded-lg hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/50 transition-colors"
               >
                 Hủy
               </button>
               <button
                 type="submit"
                 disabled={loading}
-                className="px-6 py-3 bg-gradient-to-r from-ocean-600 to-turquoise-600 text-white rounded-lg hover:from-ocean-700 hover:to-turquoise-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl"
+                className="px-4 py-2 bg-gradient-to-r from-ocean-600 to-turquoise-600 text-white rounded-lg hover:from-ocean-700 hover:to-turquoise-700 focus:outline-none focus:ring-2 focus:ring-ocean-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl"
               >
                 {loading ? "Đang cập nhật..." : "Cập nhật Event"}
               </button>
             </div>
           </form>
-        )}
-      </div>
+        </div>
+      )}
     </Modal>
   );
 }
